@@ -1,5 +1,5 @@
 FROM alpine
 ARG TARGETARCH
-COPY /${TARGETARCH}-executables/minixpd /usr/bin/
+COPY /${TARGETARCH}-executables/meesearch /usr/bin/
 
-ENTRYPOINT "/usr/bin/minixpd"
+ENTRYPOINT "/usr/bin/meesearch"
