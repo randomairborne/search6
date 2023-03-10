@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>meesearch</title>
         <style>
             body {
@@ -9,8 +11,9 @@
         </style>
     </head>
     <body>
-        <form>
-            <input type="number" name="id" />
+        <form action="/">
+            <input type="number" name="id" placeholder="ID of person you want to check" />
+            <input type="submit" hidden/>
         </form>
         {% if id %}
         User ID: {{ id }}
