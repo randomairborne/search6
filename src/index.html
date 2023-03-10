@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>meesearch error</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+        </style>
+    </head>
+    <body>
+        <form>
+            <input type="number" name="id" />
+        </form>
+        {% if id %}
+        User ID: {{ id }}
+        <br>
+        {% endif %}
+        {% if xp %}
+        {{ xp }} XP
+        <br>
+        {% endif %}
+        {% if level %}
+        Level {{ level }}
+        {% endif %}
+    </body>
+</html>
