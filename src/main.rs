@@ -4,6 +4,7 @@ use ahash::AHashMap;
 use axum::{
     extract::{Query, State},
     response::{Html, IntoResponse},
+    routing::get,
 };
 use parking_lot::RwLock;
 
@@ -33,13 +34,21 @@ async fn main() {
     };
     tokio::spawn(reload_loop(state.clone()));
     let app = axum::Router::new()
-        .route("/", axum::routing::get(fetch_user))
+        .route("/", get(fetch_user))
+        .route("/mee6_bad.png", get(logo_handler))
         .with_state(state);
     println!("Listening on http://localhost:8080/");
     axum::Server::bind(&([0, 0, 0, 0], 8080).into())
         .serve(app.into_make_service())
         .await
         .unwrap();
+}
+
+pub async fn logo_handler() -> ([(&'static str, &'static str)], &[u8]) {
+    (
+        [("Content-Type", "image/png")],
+        include_bytes!("mee6_bad.png"),
+    )
 }
 
 pub async fn reload_loop(state: AppState) {
