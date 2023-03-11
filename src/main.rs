@@ -44,7 +44,7 @@ async fn main() {
         .unwrap();
 }
 
-pub async fn logo_handler() -> ([(&'static str, &'static str)], &[u8]) {
+pub async fn logo_handler() -> ([(&'static str, &'static str); 1], &'static [u8]) {
     (
         [("Content-Type", "image/png")],
         include_bytes!("mee6_bad.png"),
