@@ -1,11 +1,11 @@
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use ahash::AHashMap;
 use axum::{
     extract::{Query, State},
     response::{Html, IntoResponse},
     routing::get,
 };
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
