@@ -1,12 +1,11 @@
 use std::sync::Arc;
-
+use tokio::sync::RwLock;
 use ahash::AHashMap;
 use axum::{
     extract::{Query, State},
     response::{Html, IntoResponse},
     routing::get,
 };
-use parking_lot::RwLock;
 
 #[tokio::main]
 async fn main() {
@@ -62,7 +61,7 @@ pub async fn reload_loop(state: AppState) {
                 .await
                 .expect("Failed to deserialize Minecraft Discord archive!");
         for user in users {
-            state.scores.write().insert(user.id, user.xp);
+            state.scores.write().await.insert(user.id, user.xp);
         }
     }
 }
@@ -75,7 +74,7 @@ pub async fn fetch_user(
         return Ok(Html(state.tera.render("index.html", &tera::Context::new())?))
     };
     let xp = {
-        let map = state.scores.read();
+        let map = state.scores.read().await;
         *map.get(&id.parse()?).ok_or(Error::UnknownId)?
     };
     let level_info = mee6::LevelInfo::new(xp);
@@ -112,6 +111,8 @@ pub enum Error {
     UnparseableId(#[from] std::num::ParseIntError),
     #[error("ID not known- May not exist or may not be level 5+")]
     UnknownId,
+    #[error("That ID isn't a user! Make sure you copied the user Snowflake ID.")]
+    InvalidId,
 }
 
 impl IntoResponse for Error {
