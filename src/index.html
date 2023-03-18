@@ -17,6 +17,8 @@
             height: 100vh;
             flex-direction: column;
             overflow: hidden;
+            background-color: #222222;
+            color: #FFFFFF;
         }
 
         body>* {
@@ -37,6 +39,21 @@
             border-radius: 5px;
             width: 40vw;
             font-size: xx-large;
+            text-align: center;
+            background-color: #111111;
+            border-color: #4f4f4f;
+            border-style: groove;
+            caret-color: #FFFFFF;
+            padding: 2px;
+            color: #FFFFFF;
+        }
+
+        input:focus {
+            background-color: #212121;
+            outline: none;
+        }
+
+        label {
             text-align: center;
         }
 
@@ -74,7 +91,7 @@
             or friend code
             (<code>Nelly#0000</code>)
         </label>
-        <input pattern="^[ ]*([0-9]+|.*#[0-9]{4})[ ]*" name="id" id="identifier" />
+        <input pattern="^[ ]*([0-9]+|.*#[0-9]{4})[ ]*" name="id" id="identifier" title="Make sure you have a valid discord ID or friend code"/>
         <input type="submit" hidden />
     </form>
     {% endif %}
