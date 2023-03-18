@@ -18,6 +18,20 @@
             flex-direction: column;
         }
 
+        body>* {
+            margin-top: 2vh;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        span {
+            margin: 2vh;
+        }
+
         input {
             border-radius: 5px;
             width: 40vw;
@@ -26,31 +40,52 @@
         }
 
         img {
-            max-height: 20vh;
+            max-height: 15vh;
+        }
+
+        code {
+            background-color: #8f8f8f;
+            padding-left: 4px;
+            padding-right: 4px;
+            border-radius: 2px;
+            color: #FFFFFF;
+        }
+
+        a {
+            padding-top: 2vh;
+            padding-bottom: 2vh;
+            padding-left: 2vw;
+            padding-right: 2vw;
+            background-color: #333333;
+            color: aqua;
+            border-radius: 1vh;
         }
     </style>
 </head>
 
 <body>
     <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it.">
+    {% if not id %}
     <form action="/">
-        <input type="number" name="id" placeholder="ID to check" />
+        <span> Please enter a discord ID (<code>302094807046684672</code>) or friend code (<code>Nelly#0000</code>)
+        </span>
+        <input pattern="^([0-9]+|.*#[0-9]{4})" name="id" />
         <input type="submit" hidden />
     </form>
+    {% endif %}
     {% if id %}
     <div>
-        User ID: {{ id }}
+        User: {{ id }}
     </div>
-    {% endif %}
-    {% if xp %}
     <div>
         {{ xp }} XP
     </div>
-    {% endif %}
-    {% if level %}
     <div>
         Level {{ level }}
     </div>
+    <a href="/">
+        Check Another
+    </a>
     {% endif %}
 </body>
 

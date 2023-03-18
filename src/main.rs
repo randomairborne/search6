@@ -17,12 +17,22 @@ async fn main() {
             .json()
             .await
             .expect("Failed to deserialize Minecraft Discord archive!");
-    let scores = Arc::new(RwLock::new(
+    let id_scores = Arc::new(RwLock::new(
         levels
             .iter()
             .map(|v| (v.id, v.xp))
             .collect::<AHashMap<u64, u64>>(),
     ));
+    let name_scores = Arc::new(RwLock::new(
+        levels
+            .iter()
+            .map(|v| (format!("{}#{}", v.username, v.discriminator), v.xp))
+            .collect::<AHashMap<String, u64>>(),
+    ));
+    let scores = Scores {
+        ids: id_scores,
+        names: name_scores,
+    };
     println!("Fetched latest levels, starting server...");
     let mut tera = tera::Tera::default();
     tera.add_raw_template("index.html", include_str!("index.html"))
@@ -61,7 +71,7 @@ pub async fn reload_loop(state: AppState) {
                 .await
                 .expect("Failed to deserialize Minecraft Discord archive!");
         for user in users {
-            state.scores.write().await.insert(user.id, user.xp);
+            state.scores.insert(user).await;
         }
     }
 }
@@ -73,10 +83,7 @@ pub async fn fetch_user(
     let Some(id) = query.id else {
         return Ok(Html(state.tera.render("index.html", &tera::Context::new())?))
     };
-    let xp = {
-        let map = state.scores.read().await;
-        *map.get(&id.parse()?).ok_or(Error::UnknownId)?
-    };
+    let xp = state.scores.get(&id).await.ok_or(Error::UnknownId)?;
     let level_info = mee6::LevelInfo::new(xp);
     let mut ctx = tera::Context::new();
     ctx.insert("level", &level_info.level());
@@ -90,12 +97,36 @@ pub async fn fetch_user(
 pub struct IncomingUser {
     pub xp: u64,
     pub id: u64,
+    pub username: String,
+    pub discriminator: String,
 }
 
 #[derive(Clone)]
 pub struct AppState {
-    pub scores: Arc<RwLock<AHashMap<u64, u64>>>,
+    pub scores: Scores,
     pub tera: Arc<tera::Tera>,
+}
+
+#[derive(Clone)]
+pub struct Scores {
+    ids: Arc<RwLock<AHashMap<u64, u64>>>,
+    names: Arc<RwLock<AHashMap<String, u64>>>,
+}
+
+impl Scores {
+    pub async fn insert(&self, user: IncomingUser) {
+        self.ids.write().await.insert(user.id, user.xp);
+        self.names
+            .write()
+            .await
+            .insert(format!("{}#{}", user.username, user.discriminator), user.xp);
+    }
+    pub async fn get(&self, identifier: &str) -> Option<u64> {
+        if let Ok(id) = identifier.parse::<u64>() {
+            return self.ids.read().await.get(&id).copied();
+        }
+        self.names.read().await.get(identifier).copied()
+    }
 }
 
 #[derive(serde::Deserialize)]
@@ -107,12 +138,8 @@ pub struct SubmitQuery {
 pub enum Error {
     #[error("Tera error: {0}")]
     Tera(#[from] tera::Error),
-    #[error("Unable to parse ID")]
-    UnparseableId(#[from] std::num::ParseIntError),
     #[error("ID not known- May not exist or may not be level 5+")]
     UnknownId,
-    #[error("That ID isn't a user! Make sure you copied the user Snowflake ID.")]
-    InvalidId,
 }
 
 impl IntoResponse for Error {
