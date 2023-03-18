@@ -83,7 +83,7 @@ pub async fn fetch_user(
     let Some(id) = query.id else {
         return Ok(Html(state.tera.render("index.html", &tera::Context::new())?))
     };
-    let xp = state.scores.get(&id).await.ok_or(Error::UnknownId)?;
+    let xp = state.scores.get(id.trim()).await.ok_or(Error::UnknownId)?;
     let level_info = mee6::LevelInfo::new(xp);
     let mut ctx = tera::Context::new();
     ctx.insert("level", &level_info.level());
