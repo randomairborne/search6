@@ -4,7 +4,7 @@ use axum::{
     response::{Html, IntoResponse},
     routing::get,
 };
-use std::sync::Arc;
+use std::{sync::Arc, collections::HashMap};
 use tokio::sync::RwLock;
 
 #[tokio::main]
@@ -27,7 +27,7 @@ async fn main() {
         levels
             .iter()
             .map(|v| (format!("{}#{}", v.username, v.discriminator), v.xp))
-            .collect::<AHashMap<String, u64>>(),
+            .collect::<HashMap<String, u64>>(),
     ));
     let scores = Scores {
         ids: id_scores,
@@ -110,7 +110,7 @@ pub struct AppState {
 #[derive(Clone)]
 pub struct Scores {
     ids: Arc<RwLock<AHashMap<u64, u64>>>,
-    names: Arc<RwLock<AHashMap<String, u64>>>,
+    names: Arc<RwLock<HashMap<String, u64>>>,
 }
 
 impl Scores {

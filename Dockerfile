@@ -1,5 +1,5 @@
 FROM alpine
 ARG TARGETARCH
-COPY /${TARGETARCH}-executables/meesearch /usr/bin/
+COPY /${TARGETARCH}-executables/search6 /usr/bin/
 
-ENTRYPOINT "/usr/bin/meesearch"
+ENTRYPOINT "/usr/bin/search6"
