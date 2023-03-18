@@ -4,7 +4,7 @@ use axum::{
     response::{Html, IntoResponse},
     routing::get,
 };
-use std::{sync::Arc, collections::HashMap};
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
 
 #[tokio::main]
