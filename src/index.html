@@ -28,7 +28,7 @@
             align-items: center;
         }
 
-        span {
+        label {
             margin: 2vh;
         }
 
@@ -44,7 +44,7 @@
         }
 
         code {
-            background-color: #8f8f8f;
+            background-color: #4f4f4f;
             padding-left: 4px;
             padding-right: 4px;
             border-radius: 2px;
@@ -64,12 +64,16 @@
 </head>
 
 <body>
-    <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it.">
+    <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it." width="404px" height="404px">
     {% if not id %}
     <form action="/">
-        <span> Please enter a discord ID (<code>302094807046684672</code>) or friend code (<code>Nelly#0000</code>)
-        </span>
-        <input pattern="^([0-9]+|.*#[0-9]{4})" name="id" />
+        <label for="identifier">
+            Please enter a discord ID
+            (<code>302094807046684672</code>)
+            or friend code
+            (<code>Nelly#0000</code>)
+        </label>
+        <input pattern="^([0-9]+|.*#[0-9]{4})" name="id" id="identifier" />
         <input type="submit" hidden />
     </form>
     {% endif %}
