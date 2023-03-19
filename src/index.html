@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if id %}
+    <meta name="description" content="User {{ id }} is level {{ level }}">
+    {% else %}
     <meta name="description" content="A simple script which checks levels in the Minecraft discord">
+    {% endif %}
     <link rel="icon" type="image/png" href="/mee6_bad.png">
     <title>search6</title>
     <style>
