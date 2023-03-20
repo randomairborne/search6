@@ -126,7 +126,7 @@ pub struct SubmitQuery {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Tera error: {0}")]
+    #[error("Tera error: {0:?}")]
     Tera(#[from] tera::Error),
     #[error("ID not known- May not exist or may not be level 5+")]
     UnknownId,
@@ -135,7 +135,7 @@ pub enum Error {
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let mut context = tera::Context::new();
-        context.insert("error", &format!("{self:#?}"));
+        context.insert("error", &self.to_string());
         match tera::Tera::one_off(include_str!("error.html"), &context, true) {
             Ok(v) => Html(v).into_response(),
             Err(e) => format!(
