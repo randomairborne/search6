@@ -9,8 +9,8 @@
     {% if user.id %}
     <meta property="og:url" content="https://search6.valk.sh/?id={{ user.id }}" />
     <meta property="og:image" content="https://cdn.discordapp.com/avatars/{{ user.id }}/{{ user.avatar }}.png" />
-    <meta property="og:description" content="User {{ user.username }}#{{ user.discriminator }} is level {{ level }}">
-    <meta name="description" content="User {{ user.username }}#{{ user.discriminator }} is level {{ level }}">
+    <meta property="og:description" content="User {{ user.username }}#{{ user.discriminator }} (id {{ user.id }}) is level {{ level }}">
+    <meta name="description" content="User {{ user.username }}#{{ user.discriminator }} (id {{ user.id }}) is level {{ level }}">
     {% else %}
     <meta property="og:url" content="https://search6.valk.sh" />
     <meta property="og:image" content="https://seach6.valk.sh/mee6_bad.png" />
@@ -103,6 +103,9 @@
     {% if user.id %}
     <div>
         User: {{ user.username }}#{{ user.discriminator }}
+    </div>
+    <div>
+        Snowflake: <code>{{ user.id }}</code>
     </div>
     <div>
         {{ user.xp }} XP
