@@ -4,10 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% if id %}
-    <meta name="description" content="User {{ id }} is level {{ level }}">
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="search6" />
+    {% if user.id %}
+    <meta property="og:url" content="https://search6.valk.sh/?id={{ user.id }}" />
+    <meta property="og:image" content="https://cdn.discordapp.com/avatars/{{ user.id }}/{{ user.avatar }}.png" />
+    <meta property="og:description" content="User {{ user.username }}#{{ user.discriminator }} is level {{ level }}">
+    <meta name="description" content="User {{ user.username }}#{{ user.discriminator }} is level {{ level }}">
     {% else %}
-    <meta name="description" content="A simple script which checks levels in the Minecraft discord">
+    <meta property="og:url" content="https://search6.valk.sh" />
+    <meta property="og:image" content="https://seach6.valk.sh/mee6_bad.png" />
+    <meta property="og:description" content="A simple website which checks levels in the Minecraft discord">
+    <meta name="description" content="A simple website which checks levels in the Minecraft discord">
     {% endif %}
     <link rel="icon" type="image/png" href="/mee6_bad.png">
     <title>search6</title>
@@ -86,25 +94,18 @@
 </head>
 
 <body>
+    {% if user.avatar %}
+    <img src="https://cdn.discordapp.com/avatars/{{ user.id }}/{{ user.avatar }}.png"
+        alt="{{ user.username }}#{{ user.discriminator }}'s Discord profile pic">
+    {% else %}
     <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it.">
-    {% if not id %}
-    <form action="/">
-        <label for="identifier">
-            Please enter a discord ID
-            (<code>302094807046684672</code>)
-            or friend code
-            (<code>Nelly#0000</code>)
-        </label>
-        <input pattern="^[ ]*([0-9]+|.*#[0-9]{4})[ ]*" name="id" id="identifier" title="Make sure you have a valid discord ID or friend code"/>
-        <input type="submit" hidden />
-    </form>
     {% endif %}
-    {% if id %}
+    {% if user.id %}
     <div>
-        User: {{ id }}
+        User: {{ user.username }}#{{ user.discriminator }}
     </div>
     <div>
-        {{ xp }} XP
+        {{ user.xp }} XP
     </div>
     <div>
         Level {{ level }}
@@ -112,6 +113,18 @@
     <a href="/">
         Check Another
     </a>
+    {% else %}
+    <form action="/">
+        <label for="identifier">
+            Please enter a discord ID
+            (<code>302094807046684672</code>)
+            or friend code
+            (<code>Nelly#0000</code>)
+        </label>
+        <input pattern="^[ ]*([0-9]+|.*#[0-9]{4})[ ]*" name="id" id="identifier"
+            title="Make sure you have a valid discord ID or friend code" />
+        <input type="submit" hidden />
+    </form>
     {% endif %}
 </body>
 

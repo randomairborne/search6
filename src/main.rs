@@ -10,35 +10,25 @@ use tokio::sync::RwLock;
 #[tokio::main]
 async fn main() {
     println!("Fetching latest levels...");
-    let levels: Vec<IncomingUser> =
-        reqwest::get("https://cdn.valk.sh/mc-discord-archive/latest.json")
-            .await
-            .expect("Failed to fetch Minecraft Discord archive!")
-            .json()
-            .await
-            .expect("Failed to deserialize Minecraft Discord archive!");
-    let id_scores = Arc::new(RwLock::new(
-        levels
-            .iter()
-            .map(|v| (v.id, v.xp))
-            .collect::<AHashMap<u64, u64>>(),
-    ));
-    let name_scores = Arc::new(RwLock::new(
-        levels
-            .iter()
-            .map(|v| (format!("{}#{}", v.username, v.discriminator), v.xp))
-            .collect::<HashMap<String, u64>>(),
-    ));
+    let levels: Vec<User> = reqwest::get("https://cdn.valk.sh/mc-discord-archive/latest.json")
+        .await
+        .expect("Failed to fetch Minecraft Discord archive!")
+        .json()
+        .await
+        .expect("Failed to deserialize Minecraft Discord archive!");
     let scores = Scores {
-        ids: id_scores,
-        names: name_scores,
+        names: levels
+            .iter()
+            .map(|v| (format!("{}#{}", v.username, v.discriminator), v.id))
+            .collect(),
+        ids: levels.into_iter().map(|v| (v.id, v)).collect(),
     };
     println!("Fetched latest levels, starting server...");
     let mut tera = tera::Tera::default();
     tera.add_raw_template("index.html", include_str!("index.html"))
         .unwrap();
     let state = AppState {
-        scores,
+        scores: Arc::new(RwLock::new(scores)),
         tera: Arc::new(tera),
     };
     tokio::spawn(reload_loop(state.clone()));
@@ -63,15 +53,14 @@ pub async fn logo_handler() -> ([(&'static str, &'static str); 1], &'static [u8]
 pub async fn reload_loop(state: AppState) {
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(1200)).await;
-        let users: Vec<IncomingUser> =
-            reqwest::get("https://cdn.valk.sh/mc-discord-archive/latest.json")
-                .await
-                .expect("Failed to fetch Minecraft Discord archive!")
-                .json()
-                .await
-                .expect("Failed to deserialize Minecraft Discord archive!");
+        let users: Vec<User> = reqwest::get("https://cdn.valk.sh/mc-discord-archive/latest.json")
+            .await
+            .expect("Failed to fetch Minecraft Discord archive!")
+            .json()
+            .await
+            .expect("Failed to deserialize Minecraft Discord archive!");
         for user in users {
-            state.scores.insert(user).await;
+            state.scores.write().await.insert(user).await;
         }
     }
 }
@@ -83,49 +72,50 @@ pub async fn fetch_user(
     let Some(id) = query.id else {
         return Ok(Html(state.tera.render("index.html", &tera::Context::new())?))
     };
-    let xp = state.scores.get(id.trim()).await.ok_or(Error::UnknownId)?;
-    let level_info = mee6::LevelInfo::new(xp);
+    let scores = state.scores.read().await;
+    let user = scores.get(id.trim()).await.ok_or(Error::UnknownId)?;
+    let level_info = mee6::LevelInfo::new(user.xp);
     let mut ctx = tera::Context::new();
     ctx.insert("level", &level_info.level());
     ctx.insert("percentage", &level_info.percentage());
-    ctx.insert("xp", &level_info.xp());
-    ctx.insert("id", &id);
+    ctx.insert("user", &user);
     Ok(Html(state.tera.render("index.html", &ctx)?))
 }
 
-#[derive(serde::Deserialize)]
-pub struct IncomingUser {
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct User {
     pub xp: u64,
     pub id: u64,
     pub username: String,
     pub discriminator: String,
+    pub avatar: Option<String>,
 }
 
 #[derive(Clone)]
 pub struct AppState {
-    pub scores: Scores,
+    pub scores: Arc<RwLock<Scores>>,
     pub tera: Arc<tera::Tera>,
 }
 
-#[derive(Clone)]
 pub struct Scores {
-    ids: Arc<RwLock<AHashMap<u64, u64>>>,
-    names: Arc<RwLock<HashMap<String, u64>>>,
+    ids: AHashMap<u64, User>,
+    names: HashMap<String, u64>,
 }
 
 impl Scores {
-    pub async fn insert(&self, user: IncomingUser) {
-        self.ids.write().await.insert(user.id, user.xp);
+    pub async fn insert(&mut self, user: User) {
         self.names
-            .write()
-            .await
-            .insert(format!("{}#{}", user.username, user.discriminator), user.xp);
+            .insert(format!("{}#{}", user.username, user.discriminator), user.id);
+        self.ids.insert(user.id, user);
     }
-    pub async fn get(&self, identifier: &str) -> Option<u64> {
+    pub async fn get(&self, identifier: &str) -> Option<&User> {
         if let Ok(id) = identifier.parse::<u64>() {
-            return self.ids.read().await.get(&id).copied();
+            return self.ids.get(&id);
         }
-        self.names.read().await.get(identifier).copied()
+        if let Some(id) = self.names.get(identifier) {
+            return self.ids.get(&id);
+        }
+        None
     }
 }
 
@@ -145,7 +135,7 @@ pub enum Error {
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let mut context = tera::Context::new();
-        context.insert("error", &self.to_string());
+        context.insert("error", &format!("{self:#?}"));
         match tera::Tera::one_off(include_str!("error.html"), &context, true) {
             Ok(v) => Html(v).into_response(),
             Err(e) => format!(
