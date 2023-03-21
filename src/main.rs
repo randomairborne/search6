@@ -79,6 +79,20 @@ pub async fn fetch_user(
     ctx.insert("level", &level_info.level());
     ctx.insert("percentage", &level_info.percentage());
     ctx.insert("user", &user);
+    if let Some(avatar) = &user.avatar {
+        let ext = if avatar.starts_with("a_") {
+            "gif"
+        } else {
+            "png"
+        };
+        ctx.insert(
+            "avatar",
+            &format!(
+                "https://cdn.discordapp.com/avatars/{}/{}.{}",
+                user.id, avatar, ext
+            ),
+        );
+    }
     Ok(Html(state.tera.render("index.html", &ctx)?))
 }
 
@@ -113,7 +127,7 @@ impl Scores {
             return self.ids.get(&id);
         }
         if let Some(id) = self.names.get(identifier) {
-            return self.ids.get(&id);
+            return self.ids.get(id);
         }
         None
     }
