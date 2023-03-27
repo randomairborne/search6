@@ -47,27 +47,6 @@
 
         label {
             margin: 2vh;
-        }
-
-        input {
-            border-radius: 5px;
-            width: 40vw;
-            font-size: xx-large;
-            text-align: center;
-            background-color: #111111;
-            border-color: #4f4f4f;
-            border-style: groove;
-            caret-color: #FFFFFF;
-            padding: 2px;
-            color: #FFFFFF;
-        }
-
-        input:focus {
-            background-color: #212121;
-            outline: none;
-        }
-
-        label {
             text-align: center;
         }
 
@@ -83,14 +62,36 @@
             color: #FFFFFF;
         }
 
-        a {
+        .btn {
             padding-top: 2vh;
             padding-bottom: 2vh;
             padding-left: 2vw;
             padding-right: 2vw;
             background-color: #333333;
             color: aqua;
-            border-radius: 1vh;
+            border-radius: 5px;
+            border: none;
+            text-decoration: underline;
+        }
+
+        .textinput {
+            border-radius: 5px;
+            width: 40vw;
+            font-size: xx-large;
+            text-align: center;
+            background-color: #111111;
+            border-color: #4f4f4f;
+            border-style: groove;
+            caret-color: #FFFFFF;
+            padding: 2px;
+            color: #FFFFFF;
+            margin-bottom: 2vh;
+            border: none;
+        }
+
+        .textinput:focus {
+            background-color: #1A1A1A;
+            outline: none;
         }
     </style>
 </head>
@@ -114,7 +115,7 @@
     <div>
         Level {{ level }}
     </div>
-    <a href="/">
+    <a href="/" class="btn">
         Check Another
     </a>
     {% else %}
@@ -125,13 +126,13 @@
             or friend code
             (<code>Nelly#0000</code>)
         </label>
-        <input pattern="^[ ]*([0-9]+|.*#[0-9]{4})[ ]*" name="id" id="identifier"
+        <input pattern="^[ ]*([0-9]+|.*#[0-9]{4})[ ]*" name="id" id="identifier" class="textinput"
             title="Make sure you have a valid discord ID or friend code" />
-        <input type="submit" hidden />
+        <input type="submit" class="btn"/>
     </form>
     {% endif %}
-    <a href="/o">
-        View your level
+    <a href="/o" class="btn">
+        View your own level
     </a>
 </body>
 
