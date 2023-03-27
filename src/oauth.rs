@@ -52,7 +52,7 @@ pub async fn set_id(
         .json()
         .await?;
     Ok(Redirect::to(&format!(
-        "/?id={}?userexists={}",
+        "/?id={}&userexists={}",
         me.id.get(),
         true
     )))
