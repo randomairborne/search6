@@ -57,7 +57,8 @@ pub async fn set_id(
         }
         state
             .client
-            .revoke_token(token_result.access_token().into()).ok();
+            .revoke_token(token_result.access_token().into())
+            .ok();
     });
     Ok(Redirect::to(&format!(
         "/?id={}&userexists={}",
