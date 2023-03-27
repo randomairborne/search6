@@ -51,6 +51,14 @@ pub async fn set_id(
         .await?
         .json()
         .await?;
+    tokio::spawn(async move {
+        if let Some(rt) = token_result.refresh_token() {
+            state.client.revoke_token(rt.into()).ok();
+        }
+        state
+            .client
+            .revoke_token(token_result.access_token().into()).ok();
+    });
     Ok(Redirect::to(&format!(
         "/?id={}&userexists={}",
         me.id.get(),
