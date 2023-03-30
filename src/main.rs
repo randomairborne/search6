@@ -22,18 +22,7 @@ async fn main() {
     let root = std::env::var("ROOT").expect("Expected root in environment");
     println!("Fetching latest levels...");
     let http = reqwest::Client::new();
-    let mut users: Vec<User> = http
-        .get("https://cdn.valk.sh/mc-discord-archive/latest.json")
-        .send()
-        .await
-        .expect("Failed to fetch Minecraft Discord archive!")
-        .json()
-        .await
-        .expect("Failed to deserialize Minecraft Discord archive!");
-    users.sort_by(|a, b| a.xp.cmp(&b.xp).reverse());
-    for (rank, user) in users.iter_mut().enumerate() {
-        user.rank = Some(rank + 1);
-    }
+    let users: Vec<User> = get_users(&http).await.expect("Failed to fetch users");
     let scores = Scores {
         names: users
             .iter()
@@ -91,24 +80,31 @@ pub async fn logo_handler() -> ([(&'static str, &'static str); 1], &'static [u8]
 pub async fn reload_loop(state: AppState) {
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(1200)).await;
-        let mut users: Vec<User> = state
-            .http
-            .get("https://cdn.valk.sh/mc-discord-archive/latest.json")
-            .send()
-            .await
-            .expect("Failed to fetch Minecraft Discord archive!")
-            .json()
-            .await
-            .expect("Failed to deserialize Minecraft Discord archive!");
-        users.sort_by(|a, b| a.xp.cmp(&b.xp));
-        for (rank, user) in users.into_iter().enumerate() {
-            let user = User {
-                rank: Some(rank),
-                ..user
-            };
+        let users = match get_users(state.http.clone()).await {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("Failed to update users: {e}");
+                break;
+            }
+        };
+        for user in users {
             state.scores.write().await.insert(user);
         }
     }
+}
+
+pub async fn get_users(http: &reqwest::Client) -> Result<Vec<User>, Error> {
+    let mut users: Vec<User> = http
+        .get("https://cdn.valk.sh/mc-discord-archive/latest.json")
+        .send()
+        .await?
+        .json()
+        .await?;
+    users.sort_by(|a, b| a.xp.cmp(&b.xp).reverse());
+    for (rank, user) in users.iter_mut().enumerate() {
+        user.rank = Some(rank + 1);
+    }
+    Ok(users)
 }
 
 #[allow(clippy::missing_errors_doc)]
