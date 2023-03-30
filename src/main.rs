@@ -9,7 +9,6 @@ use base64::Engine;
 use oauth2::{
     AuthUrl, ClientId, ClientSecret, PkceCodeVerifier, RedirectUrl, RevocationUrl, TokenUrl,
 };
-use rand::Rng;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
 use xpd_rank_card::SvgState;
