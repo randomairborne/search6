@@ -8,7 +8,7 @@
     <meta property="og:title" content="search6" />
     {% if user.id %}
     <meta property="og:url" content="https://search6.valk.sh/?id={{ user.id }}" />
-    <meta property="og:image" content="{{ avatar }}" />
+    <meta property="og:image" content="/card?id={{ user.id | urlencode }}" />
     <meta property="og:description"
         content="User {{ user.username }}#{{ user.discriminator }} (id {{ user.id }}) is level {{ level }}">
     <meta name="description"
@@ -97,7 +97,7 @@
 </head>
 
 <body>
-    {% if user.avatar %}
+    {% if avatar %}
     <img src="{{ avatar }}" alt="{{ user.username }}#{{ user.discriminator }}'s Discord profile pic">
     {% else %}
     <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it.">
