@@ -8,16 +8,19 @@
     <meta property="og:title" content="search6" />
     {% if user.id %}
     <meta property="og:url" content="https://search6.valk.sh/?id={{ user.id }}" />
-    <meta property="og:image" content="/card?id={{ user.id }}" />
     <meta property="og:description"
         content="User {{ user.username }}#{{ user.discriminator }} (id {{ user.id }}) is level {{ level }}">
     <meta name="description"
         content="User {{ user.username }}#{{ user.discriminator }} (id {{ user.id }}) is level {{ level }}">
     {% else %}
     <meta property="og:url" content="https://search6.valk.sh" />
-    <meta property="og:image" content="https://seach6.valk.sh/mee6_bad.png" />
     <meta property="og:description" content="A simple website which checks levels in the Minecraft discord">
     <meta name="description" content="A simple website which checks levels in the Minecraft discord">
+    {% endif %}
+    {% if avatar %}
+    <meta property="og:image" content="{{ avatar }}" />
+    {% else %}
+    <meta property="og:image" content="https://seach6.valk.sh/mee6_bad.png" />
     {% endif %}
     <link rel="icon" type="image/png" href="/mee6_bad.png">
     <title>search6</title>
