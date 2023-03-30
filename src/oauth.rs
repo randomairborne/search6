@@ -44,7 +44,7 @@ pub async fn set_id(
         .await
         .map_err(|_| Error::CodeExchangeFailed)?;
     let me: twilight_model::user::CurrentUser = state
-        .dclient
+        .http
         .get("https://discord.com/api/v10/users/@me")
         .bearer_auth(token_result.access_token().secret())
         .send()

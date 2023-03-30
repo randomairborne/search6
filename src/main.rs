@@ -5,12 +5,13 @@ use axum::{
     response::{Html, IntoResponse},
     routing::get,
 };
+use base64::Engine;
 use oauth2::{
     AuthUrl, ClientId, ClientSecret, PkceCodeVerifier, RedirectUrl, RevocationUrl, TokenUrl,
 };
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
-
+use xpd_rank_card::SvgState;
 mod oauth;
 
 #[tokio::main]
@@ -20,7 +21,10 @@ async fn main() {
         std::env::var("CLIENT_SECRET").expect("Expected client secret in environment");
     let root = std::env::var("ROOT").expect("Expected root in environment");
     println!("Fetching latest levels...");
-    let levels: Vec<User> = reqwest::get("https://cdn.valk.sh/mc-discord-archive/latest.json")
+    let http = reqwest::Client::new();
+    let levels: Vec<User> = http
+        .get("https://cdn.valk.sh/mc-discord-archive/latest.json")
+        .send()
         .await
         .expect("Failed to fetch Minecraft Discord archive!")
         .json()
@@ -53,14 +57,14 @@ async fn main() {
         tera: Arc::new(tera),
         tokens: Arc::new(RwLock::new(HashMap::with_capacity(2))),
         client,
-        dclient: reqwest::ClientBuilder::new()
-            .user_agent("search6")
-            .build()
-            .unwrap(),
+        svg: SvgState::new(),
+        http,
     };
     tokio::spawn(reload_loop(state.clone()));
     let app = axum::Router::new()
         .route("/", get(fetch_user))
+        .route("/c", get(fetch_card))
+        .route("/card", get(fetch_card))
         .route("/o", get(oauth::redirect))
         .route("/oc", get(oauth::set_id))
         .route("/mee6_bad.png", get(logo_handler))
@@ -132,6 +136,42 @@ pub async fn fetch_user(
     Ok(Html(state.tera.render("index.html", &ctx)?))
 }
 
+#[allow(clippy::missing_errors_doc)]
+pub async fn fetch_card(
+    State(state): State<AppState>,
+    Query(query): Query<SubmitQuery>,
+) -> Result<([(&'static str, &'static str); 1], Vec<u8>), Error> {
+    let Some(id) = query.id else {
+        return Err(Error::UnknownId);
+    };
+    let scores = state.scores.read().await;
+    let result_user = scores.get(id.trim());
+    let user = if query.userexists {
+        result_user.ok_or(Error::NotLevelFive)?
+    } else {
+        result_user.ok_or(Error::UnknownId)?
+    };
+    let level_info = mee6::LevelInfo::new(user.xp);
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let ctx = xpd_rank_card::Context {
+        level: level_info.level(),
+        rank: 0,
+        name: user.username.clone(),
+        discriminator: user.discriminator.clone(),
+        percentage: (level_info.percentage() * 100.0).round() as u64,
+        current: level_info.xp(),
+        needed: mee6::xp_needed_for_level(level_info.level() + 1),
+        toy: None,
+        avatar: get_avatar(&state, user).await?,
+        font: "Mojang".to_string(),
+        colors: xpd_rank_card::colors::Colors::default(),
+    };
+    Ok((
+        [("Content-Type", "image/png")],
+        state.svg.render(ctx).await?,
+    ))
+}
+
 #[derive(serde::Deserialize)]
 pub struct SubmitQuery {
     id: Option<String>,
@@ -158,7 +198,8 @@ pub struct AppState {
     pub tera: Arc<tera::Tera>,
     pub tokens: Arc<RwLock<HashMap<String, PkceCodeVerifier>>>,
     pub client: oauth2::basic::BasicClient,
-    pub dclient: reqwest::Client,
+    pub http: reqwest::Client,
+    pub svg: SvgState,
 }
 
 pub struct Scores {
@@ -190,6 +231,8 @@ pub enum Error {
     Tera(#[from] tera::Error),
     #[error("Reqwest error: {0:?}")]
     Reqwest(#[from] reqwest::Error),
+    #[error("SVG error: {0:?}")]
+    Svg(#[from] xpd_rank_card::Error),
     #[error("ID not known- May not exist or may not be level 5+")]
     UnknownId,
     #[error("This user is not level 5 or higher")]
@@ -214,4 +257,28 @@ impl IntoResponse for Error {
             .into_response(),
         }
     }
+}
+
+async fn get_avatar(state: &AppState, user: &User) -> Result<String, Error> {
+    let url = user.avatar.as_ref().map_or_else(
+        || {
+            format!(
+                "https://cdn.discordapp.com/embed/avatars/{}/{}.png",
+                user.id,
+                user.discriminator.parse().unwrap_or(1) % 5
+            )
+        },
+        |hash| {
+            format!(
+                "https://cdn.discordapp.com/avatars/{}/{}.png",
+                user.id, hash
+            )
+        },
+    );
+    let png = state.http.get(url).send().await?.bytes().await?;
+    let data = format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(png)
+    );
+    Ok(data)
 }
