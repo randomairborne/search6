@@ -8,7 +8,7 @@
     <meta property="og:title" content="search6" />
     {% if user.id %}
     <meta property="og:url" content="https://search6.valk.sh/?id={{ user.id }}" />
-    <meta property="og:image" content="/card?id={{ user.id | urlencode }}" />
+    <meta property="og:image" content="/card?id={{ user.id }}" />
     <meta property="og:description"
         content="User {{ user.username }}#{{ user.discriminator }} (id {{ user.id }}) is level {{ level }}">
     <meta name="description"
