@@ -80,7 +80,7 @@ pub async fn logo_handler() -> ([(&'static str, &'static str); 1], &'static [u8]
 pub async fn reload_loop(state: AppState) {
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(1200)).await;
-        let users = match get_users(state.http.clone()).await {
+        let users = match get_users(&state.http).await {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to update users: {e}");
@@ -93,6 +93,7 @@ pub async fn reload_loop(state: AppState) {
     }
 }
 
+#[allow(clippy::missing_errors_doc)]
 pub async fn get_users(http: &reqwest::Client) -> Result<Vec<User>, Error> {
     let mut users: Vec<User> = http
         .get("https://cdn.valk.sh/mc-discord-archive/latest.json")
