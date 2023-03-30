@@ -22,7 +22,7 @@ async fn main() {
     let root = std::env::var("ROOT").expect("Expected root in environment");
     println!("Fetching latest levels...");
     let http = reqwest::Client::new();
-    let levels: Vec<User> = http
+    let mut users: Vec<User> = http
         .get("https://cdn.valk.sh/mc-discord-archive/latest.json")
         .send()
         .await
@@ -30,12 +30,16 @@ async fn main() {
         .json()
         .await
         .expect("Failed to deserialize Minecraft Discord archive!");
+    users.sort_by(|a, b| a.xp.cmp(&b.xp).reverse());
+    for (rank, user) in users.iter_mut().enumerate() {
+        user.rank = Some(rank + 1);
+    }
     let scores = Scores {
-        names: levels
+        names: users
             .iter()
             .map(|v| (format!("{}#{}", v.username, v.discriminator), v.id))
             .collect(),
-        ids: levels.into_iter().map(|v| (v.id, v)).collect(),
+        ids: users.into_iter().map(|v| (v.id, v)).collect(),
     };
     println!("Fetched latest levels, starting server...");
     let mut tera = tera::Tera::default();
@@ -87,13 +91,21 @@ pub async fn logo_handler() -> ([(&'static str, &'static str); 1], &'static [u8]
 pub async fn reload_loop(state: AppState) {
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(1200)).await;
-        let users: Vec<User> = reqwest::get("https://cdn.valk.sh/mc-discord-archive/latest.json")
+        let mut users: Vec<User> = state
+            .http
+            .get("https://cdn.valk.sh/mc-discord-archive/latest.json")
+            .send()
             .await
             .expect("Failed to fetch Minecraft Discord archive!")
             .json()
             .await
             .expect("Failed to deserialize Minecraft Discord archive!");
-        for user in users {
+        users.sort_by(|a, b| a.xp.cmp(&b.xp));
+        for (rank, user) in users.into_iter().enumerate() {
+            let user = User {
+                rank: Some(rank),
+                ..user
+            };
             state.scores.write().await.insert(user);
         }
     }
@@ -155,7 +167,7 @@ pub async fn fetch_card(
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let ctx = xpd_rank_card::Context {
         level: level_info.level(),
-        rank: 0,
+        rank: user.rank.unwrap_or(0) as i64,
         name: user.username.clone(),
         discriminator: user.discriminator.clone(),
         percentage: (level_info.percentage() * 100.0).round() as u64,
@@ -190,6 +202,7 @@ pub struct User {
     pub username: String,
     pub discriminator: String,
     pub avatar: Option<String>,
+    pub rank: Option<usize>,
 }
 
 #[derive(Clone)]
