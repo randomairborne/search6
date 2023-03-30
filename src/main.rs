@@ -9,6 +9,7 @@ use base64::Engine;
 use oauth2::{
     AuthUrl, ClientId, ClientSecret, PkceCodeVerifier, RedirectUrl, RevocationUrl, TokenUrl,
 };
+use rand::Rng;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
 use xpd_rank_card::SvgState;
@@ -61,6 +62,7 @@ async fn main() {
         .route("/o", get(oauth::redirect))
         .route("/oc", get(oauth::set_id))
         .route("/mee6_bad.png", get(logo_handler))
+        .route("/rick.mp3", get(rick_handler))
         .with_state(state);
     println!("Listening on http://localhost:8080/");
     axum::Server::bind(&([0, 0, 0, 0], 8080).into())
@@ -75,6 +77,11 @@ pub async fn logo_handler() -> ([(&'static str, &'static str); 1], &'static [u8]
         [("Content-Type", "image/png")],
         include_bytes!("mee6_bad.png"),
     )
+}
+
+#[allow(clippy::unused_async)]
+pub async fn rick_handler() -> ([(&'static str, &'static str); 1], &'static [u8]) {
+    ([("Content-Type", "audio/mpeg")], include_bytes!("rick.mp3"))
 }
 
 pub async fn reload_loop(state: AppState) {
@@ -142,6 +149,7 @@ pub async fn fetch_user(
             ),
         );
     }
+    ctx.insert("rick", &rand::thread_rng().gen_bool(0.05));
     Ok(Html(state.tera.render("index.html", &ctx)?))
 }
 
