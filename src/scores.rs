@@ -31,4 +31,7 @@ impl Scores {
             ids: users.into_iter().map(|v| (v.id, v)).collect(),
         }
     }
+    pub fn size(&self) -> usize {
+        self.ids.len()
+    }
 }

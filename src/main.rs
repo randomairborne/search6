@@ -9,7 +9,10 @@ use axum::{
 use oauth2::{
     AuthUrl, ClientId, ClientSecret, PkceCodeVerifier, RedirectUrl, RevocationUrl, TokenUrl,
 };
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{atomic::AtomicUsize, Arc},
+};
 use tokio::sync::RwLock;
 use xpd_rank_card::SvgState;
 
@@ -47,6 +50,8 @@ async fn main() {
         svg: SvgState::new(),
         http,
         err: Arc::new(RwLock::new(None)),
+        users: Arc::new(AtomicUsize::new(0)),
+        page: Arc::new(AtomicUsize::new(0)),
     };
     tokio::spawn(reload_loop(state.clone()));
     let app = axum::Router::new()
@@ -69,9 +74,9 @@ async fn main() {
 pub async fn reload_loop(state: AppState) {
     let mut timer = tokio::time::interval(std::time::Duration::from_secs(3));
     timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
-    let mut page = 0;
-    let mut rank = 1;
-    loop {
+    let mut page = 0usize;
+    let mut rank = 1i64;
+    'update: loop {
         timer.tick().await;
         let resp = match state
             .http
@@ -83,24 +88,24 @@ pub async fn reload_loop(state: AppState) {
             Ok(v) => v,
             Err(e) => {
                 *state.err.write().await = Some(format!("error getting users: {e:?}"));
-                break;
+                continue 'update;
             }
         };
         let players: Players = match resp.json().await {
             Ok(v) => v,
             Err(e) => {
                 *state.err.write().await = Some(format!("error deserializing users: {e:?}"));
-                break;
+                continue 'update;
             }
         };
-        for player in players.players {
+        'insert: for player in players.players {
             if player.xp < 100 {
                 rank = 1;
                 page = 0;
-                break;
+                continue 'update;
             }
             let Ok(id) = player.id.parse::<u64>() else {
-                break;
+                continue 'insert;
             };
             let user = User {
                 xp: player.xp,
@@ -114,6 +119,11 @@ pub async fn reload_loop(state: AppState) {
             rank += 1;
         }
         page += 1;
+        state.page.store(page, std::sync::atomic::Ordering::Relaxed);
+        state.users.store(
+            state.scores.read().await.size(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
     }
 }
 
@@ -150,6 +160,8 @@ pub struct AppState {
     pub http: reqwest::Client,
     pub svg: SvgState,
     pub err: Arc<RwLock<Option<String>>>,
+    pub page: Arc<AtomicUsize>,
+    pub users: Arc<AtomicUsize>,
 }
 
 #[derive(Debug, thiserror::Error)]

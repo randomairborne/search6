@@ -17,10 +17,12 @@
 
 <body>
     {% if error %}
-    {{ error }}
+    <div>{{ error }}</div>
     {% else %}
-    No errors!
+    <div>No errors!</div>
     {% endif %}
+    <div>Last fetched page {{ page }}</div>
+    <div>{{ users }} users in cache</div>
 </body>
 
 </html>
