@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="search6" />
+    <meta property="og:url" content="https://search6.valk.sh/health" />
+    <meta property="og:description" content="search6 healthcheck">
+    <meta name="description" content="search6 healthcheck">
+    <meta property="og:image" content="https://seach6.valk.sh/mee6_bad.png" />
+    <link rel="icon" type="image/png" href="/mee6_bad.png">
+    <link rel="stylesheet" href="/style.css">
+    <title>search6 healthcheck</title>
+</head>
+
+<body>
+    {% if error %}
+    {{ error }}
+    {% else %}
+    No errors!
+    {% endif %}
+</body>
+
+</html>

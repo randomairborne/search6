@@ -1,0 +1,90 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: #222222;
+    color: #FFFFFF;
+}
+
+code {
+    background-color: #4f4f4f;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 2px;
+    color: #FFFFFF;
+}
+
+body>* {
+    margin-top: 2vh;
+}
+
+.request-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.request-label {
+    margin: 2vh;
+    text-align: center;
+}
+
+.profile-picture {
+    max-height: 15vh;
+}
+
+.btn {
+    padding-top: 2vh;
+    padding-bottom: 2vh;
+    padding-left: 2vw;
+    padding-right: 2vw;
+    background-color: #333333;
+    color: aqua;
+    border-radius: 5px;
+    border: none;
+    text-decoration: underline;
+}
+
+.textinput {
+    border-radius: 5px;
+    width: 40vw;
+    font-size: xx-large;
+    text-align: center;
+    background-color: #111111;
+    border-color: #4f4f4f;
+    border-style: groove;
+    caret-color: #FFFFFF;
+    padding: 2px;
+    color: #FFFFFF;
+    margin-bottom: 2vh;
+    border: none;
+}
+
+.textinput:focus {
+    background-color: #1A1A1A;
+    outline: none;
+}
+
+.err {
+    padding: 2vh;
+    border-radius: 1vh;
+    background-color: #222222;
+    color: #FFFFFF;
+    margin-left: 10vw;
+    margin-right: 10vw;
+}
+
+.home {
+    padding-top: 2vh;
+    padding-bottom: 2vh;
+    padding-left: 2vw;
+    padding-right: 2vw;
+    background-color: #333333;
+    color: aqua;
+    border-radius: 1vh;
+}
