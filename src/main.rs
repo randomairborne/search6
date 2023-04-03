@@ -88,6 +88,7 @@ pub async fn reload_loop(state: AppState) {
             Ok(v) => v,
             Err(e) => {
                 *state.err.write().await = Some(format!("error getting users: {e:?}"));
+                println!("{e:?}");
                 continue 'update;
             }
         };
@@ -95,6 +96,7 @@ pub async fn reload_loop(state: AppState) {
             Ok(v) => v,
             Err(e) => {
                 *state.err.write().await = Some(format!("error deserializing users: {e:?}"));
+                println!("{e:?}");
                 continue 'update;
             }
         };
