@@ -172,9 +172,9 @@ pub enum Error {
     Reqwest(#[from] reqwest::Error),
     #[error("SVG error: {0:?}")]
     Svg(#[from] xpd_rank_card::Error),
-    #[error("ID not known- May not exist or may not be level 5+")]
+    #[error("ID not known- May not exist or may not be cached")]
     UnknownId,
-    #[error("This user is not level 5 or higher")]
+    #[error("This user is not ranked or may be uncached")]
     NotLevelFive,
     #[error("Invalid OAuth2 State")]
     InvalidState,
