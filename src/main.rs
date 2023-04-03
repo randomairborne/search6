@@ -115,6 +115,7 @@ pub async fn reload_loop(state: AppState) {
                 username: player.username,
                 discriminator: player.discriminator,
                 avatar: player.avatar,
+                message_count: player.message_count,
                 rank,
             };
             state.scores.write().await.insert(user);
@@ -136,6 +137,7 @@ pub struct User {
     pub username: String,
     pub discriminator: String,
     pub avatar: Option<String>,
+    pub message_count: Option<u64>,
     pub rank: i64,
 }
 
@@ -145,6 +147,7 @@ pub struct Player {
     pub id: String,
     pub username: String,
     pub discriminator: String,
+    pub message_count: Option<u64>,
     pub avatar: Option<String>,
 }
 
