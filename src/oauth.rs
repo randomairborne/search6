@@ -1,28 +1,20 @@
 use axum::extract::{Query, State};
 use axum::response::Redirect;
 use oauth2::reqwest::async_http_client;
-use oauth2::{AuthorizationCode, CsrfToken, PkceCodeChallenge, Scope, TokenResponse};
+use oauth2::{AuthorizationCode, CsrfToken, PkceCodeChallenge, Scope};
+use redis::AsyncCommands;
 
 use crate::{AppState, Error};
 
-pub async fn redirect(State(state): State<AppState>) -> Redirect {
+pub async fn redirect(State(state): State<AppState>) -> Result<Redirect, Error> {
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
-
     let (auth_url, csrf_token) = state
-        .client
+        .oauth
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("identify".to_string()))
         .set_pkce_challenge(pkce_challenge)
         .url();
-    state
-        .tokens
-        .write()
-        .await
-        .insert(csrf_token.secret().to_string(), pkce_verifier);
-    tokio::spawn(async move {
-        tokio::time::sleep(std::time::Duration::from_secs(600)).await;
-        state.tokens.write().await.remove(csrf_token.secret());
-    });
+    state.redis.get().await?.set_ex();
     Redirect::to(auth_url.as_str())
 }
 

@@ -101,17 +101,3 @@ pub async fn logo() -> ([(&'static str, &'static str); 1], &'static [u8]) {
 pub async fn style() -> ([(&'static str, &'static str); 1], &'static str) {
     ([("Content-Type", "text/css")], include_str!("style.css"))
 }
-
-pub async fn health(State(state): State<AppState>) -> Result<Html<String>, Error> {
-    let mut context = tera::Context::new();
-    context.insert("error", &state.err.read().await.clone());
-    context.insert(
-        "users",
-        &state.users.load(std::sync::atomic::Ordering::Relaxed),
-    );
-    context.insert(
-        "page",
-        &state.page.load(std::sync::atomic::Ordering::Relaxed),
-    );
-    Ok(Html(state.tera.render("health.html", &context)?))
-}

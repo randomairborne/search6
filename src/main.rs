@@ -1,23 +1,17 @@
 #![warn(clippy::all, clippy::nursery, clippy::pedantic)]
 mod handlers;
-mod scores;
+mod oauth;
 mod util;
+
 use axum::{
     response::{Html, IntoResponse},
     routing::get,
 };
-use oauth2::{
-    AuthUrl, ClientId, ClientSecret, PkceCodeVerifier, RedirectUrl, RevocationUrl, TokenUrl,
-};
-use std::{
-    collections::HashMap,
-    sync::{atomic::AtomicUsize, Arc},
-};
-use tokio::sync::RwLock;
+use deadpool_redis::{Config, Runtime};
+use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, RevocationUrl, TokenUrl};
+use redis::AsyncCommands;
+use std::sync::Arc;
 use xpd_rank_card::SvgState;
-
-use crate::scores::Scores;
-mod oauth;
 
 #[tokio::main]
 async fn main() {
@@ -25,13 +19,17 @@ async fn main() {
     let client_secret =
         std::env::var("CLIENT_SECRET").expect("Expected client secret in environment");
     let root = std::env::var("ROOT").expect("Expected root in environment");
+    let root = std::env::var("REDIS_URL").expect("Expected redis url in environment");
     let http = reqwest::Client::new();
     let mut tera = tera::Tera::default();
-    tera.add_raw_template("index.html", include_str!("index.html"))
-        .unwrap();
-    tera.add_raw_template("health.html", include_str!("health.html"))
-        .unwrap();
-    let client = oauth2::basic::BasicClient::new(
+    tera.add_raw_templates(vec![
+        ("index.html", include_str!("index.html")),
+        ("health.html", include_str!("health.html")),
+    ])
+    .unwrap();
+    let mut redis_cfg = Config::from_url("redis://127.0.0.1/");
+    let redis = redis_cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
+    let oauth = oauth2::basic::BasicClient::new(
         ClientId::new(client_id),
         Some(ClientSecret::new(client_secret)),
         AuthUrl::new("https://discord.com/oauth2/authorize".to_string()).unwrap(),
@@ -43,15 +41,11 @@ async fn main() {
     // Set the URL the user will be redirected to after the authorization process.
     .set_redirect_uri(RedirectUrl::new(format!("{}/oc", root.trim_end_matches('/'))).unwrap());
     let state = AppState {
-        scores: Arc::new(RwLock::new(Scores::new(Vec::new()))),
         tera: Arc::new(tera),
-        tokens: Arc::new(RwLock::new(HashMap::with_capacity(2))),
-        client,
+        oauth,
         svg: SvgState::new(),
         http,
-        err: Arc::new(RwLock::new(None)),
-        users: Arc::new(AtomicUsize::new(0)),
-        page: Arc::new(AtomicUsize::new(0)),
+        redis,
     };
     tokio::spawn(reload_loop(state.clone()));
     let app = axum::Router::new()
@@ -87,19 +81,18 @@ pub async fn reload_loop(state: AppState) {
         {
             Ok(v) => v,
             Err(e) => {
-                *state.err.write().await = Some(format!("error getting users: {e:?}"));
-                println!("{e:?}");
+                eprintln!("{e:?}");
                 continue 'update;
             }
         };
         let players: Players = match resp.json().await {
             Ok(v) => v,
             Err(e) => {
-                *state.err.write().await = Some(format!("error deserializing users: {e:?}"));
-                println!("{e:?}");
+                eprintln!("{e:?}");
                 continue 'update;
             }
         };
+        let mut serialized_users: Vec<(String, String)> = Vec::with_capacity(2000);
         'insert: for player in players.players {
             if player.xp < 100 {
                 rank = 1;
@@ -109,6 +102,8 @@ pub async fn reload_loop(state: AppState) {
             let Ok(id) = player.id.parse::<u64>() else {
                 continue 'insert;
             };
+            let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
+            let id_key = format!("user.id:{}", player.id);
             let user = User {
                 xp: player.xp,
                 id,
@@ -118,15 +113,19 @@ pub async fn reload_loop(state: AppState) {
                 message_count: player.message_count,
                 rank,
             };
-            state.scores.write().await.insert(user);
+            let Ok(data) = serde_json::to_string(&user) else { continue 'insert; };
+            serialized_users.push((slug_key, id_key.clone()));
+            serialized_users.push((id_key, data));
             rank += 1;
         }
+        let Ok(mut redis) = state.redis.get().await else { continue 'update; };
+        if let Err(redis) = redis
+            .set_multiple::<String, String, ()>(&serialized_users)
+            .await
+        {
+            continue 'update;
+        };
         page += 1;
-        state.page.store(page, std::sync::atomic::Ordering::Relaxed);
-        state.users.store(
-            state.scores.read().await.size(),
-            std::sync::atomic::Ordering::Relaxed,
-        );
     }
 }
 
@@ -158,15 +157,11 @@ pub struct Players {
 
 #[derive(Clone)]
 pub struct AppState {
-    pub scores: Arc<RwLock<Scores>>,
     pub tera: Arc<tera::Tera>,
-    pub tokens: Arc<RwLock<HashMap<String, PkceCodeVerifier>>>,
-    pub client: oauth2::basic::BasicClient,
+    pub oauth: oauth2::basic::BasicClient,
     pub http: reqwest::Client,
     pub svg: SvgState,
-    pub err: Arc<RwLock<Option<String>>>,
-    pub page: Arc<AtomicUsize>,
-    pub users: Arc<AtomicUsize>,
+    pub redis: deadpool_redis::Pool,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -177,6 +172,8 @@ pub enum Error {
     Reqwest(#[from] reqwest::Error),
     #[error("SVG error: {0:?}")]
     Svg(#[from] xpd_rank_card::Error),
+    #[error("Redis error: {0:?}")]
+    Redis(#[from] deadpool_redis::redis::RedisError),
     #[error("ID not known- May not exist or may not be cached")]
     UnknownId,
     #[error("This user is not ranked or may be uncached")]
