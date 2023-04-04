@@ -23,15 +23,295 @@
     <meta property="og:image" content="https://seach6.valk.sh/mee6_bad.png" />
     {% endif %}
     <link rel="icon" type="image/png" href="/mee6_bad.png">
-    <link rel="stylesheet" href="/style.css">
     <title>search6</title>
+    <style>
+         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            flex-direction: column;
+            overflow: hidden;
+            background: linear-gradient(to top, #000000 10%, #ffffff 245%);
+            color: #FFFFFF;
+            text-decoration: none;
+        }
+
+        body>* {
+            margin-top: 2vh;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label {
+            margin: 2vh;
+            text-align: center;
+        }
+
+        img {
+            max-height: 15vh;
+        }
+
+        code {
+            background-color: #4f4f4f;
+            padding-left: 4px;
+            padding-right: 4px;
+            border-radius: 2px;
+            color: #FFFFFF;
+        }
+
+        .btn {
+            padding-top: 2vh;
+            padding-bottom: 2vh;
+            padding-left: 2vw;
+            padding-right: 2vw;
+            background-color: #333333;
+            color: aqua;
+            border-radius: 5px;
+            border: none;
+            text-decoration: underline;
+        }
+
+        .textinput {
+            border-radius: 5px;
+            width: 40vw;
+            font-size: xx-large;
+            text-align: center;
+            background-color: #111111;
+            border-color: #4f4f4f;
+            border-style: groove;
+            caret-color: #FFFFFF;
+            padding: 2px;
+            color: #FFFFFF;
+            margin-bottom: 2vh;
+            border: none;
+        }
+
+        .textinput:focus {
+            background-color: #1A1A1A;
+            outline: none;
+        }
+
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        .wrap {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .button {
+            min-width: 250px;
+            min-height: 50px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 1.3px;
+            font-weight: 700;
+            color: #313133;
+            background: #4FD1C5;
+            background: linear-gradient(90deg, rgba(129, 230, 217, 1) 0%, rgba(79, 209, 197, 1) 100%);
+            border: none;
+            border-radius: 1000px;
+            box-shadow: 12px 12px 24px rgba(79, 209, 197, .64);
+            transition: all 0.3s ease-in-out 0s;
+            cursor: pointer;
+            outline: none;
+            position: relative;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+
+        .button::before {
+            content: '';
+            border-radius: 1000px;
+            min-width: calc(300px + 12px);
+            min-height: calc(60px + 12px);
+            border: 6px solid #00FFCB;
+            box-shadow: 0 0 60px rgba(0, 255, 203, .64);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: all .3s ease-in-out 0s;
+        }
+
+        .button:hover,
+        .button:focus {
+            color: #313133;
+            transform: translateY(-6px);
+        }
+
+        .button:hover::before,
+        .button:focus::before {
+            opacity: 1;
+        }
+
+        .button::after {
+            content: '';
+            width: 30px;
+            height: 30px;
+            border-radius: 100%;
+            border: 6px solid #00FFCB;
+            position: absolute;
+            z-index: -1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: ring 1.5s infinite;
+        }
+
+        .button:hover::after,
+        .button:focus::after {
+            animation: none;
+            display: none;
+        }
+
+        @keyframes ring {
+            0% {
+                width: 30px;
+                height: 30px;
+                opacity: 1;
+            }
+
+            100% {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+            }
+        }
+
+        .A14 {
+            padding: 15px 40px;
+            background: #000;
+            border: 0;
+            border-radius: 4px;
+            color: #fff;
+            text-transform: uppercase;
+            font-family: helvetica;
+            font-size: 12px;
+            letter-spacing: 3px;
+            position: relative;
+            transition: all .4s cubic-bezier(0.645, 0.045, 0.355, 1);
+            cursor: pointer;
+            display: block;
+            margin: 100px auto;
+            margin-top: 45px;
+        }
+
+        .A14::after,
+        .A14::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 0px;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: all .4s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+
+        .A14::after {
+            width: 30px;
+            height: 1px;
+            background: white;
+            transform: translateX(-3px);
+            margin-top: 0px;
+        }
+
+        .A14::before {
+            content: "";
+            transform: rotate(-135deg) translateX(50%);
+            width: 11px;
+            height: 11px;
+            background: transparent;
+            border-left: 1px solid white;
+            border-bottom: 1px solid white;
+            margin-top: -1px;
+        }
+
+
+        .A14:hover {
+            padding: 15px 60px 15px 20px;
+        }
+
+        .A14:hover::after,
+        .A14:hover::before {
+            opacity: 1;
+            right: 15px;
+        }
+
+        #identifier {
+            border: 2px solid #000000;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 16px;
+            transition: border-color 0.2s ease-in-out;
+            background-color: #000000;
+        }
+
+        #identifier:focus {
+            border-color: #1E90FF;
+            box-shadow: 0 0 5px #1E90FF;
+        }
+
+        #identifier.invalid {
+            border-color: #FF4136;
+            animation: invalid-input 0.5s ease-in-out;
+        }
+
+        @keyframes invalid-input {
+            0% {
+                border-color: #FF4136;
+            }
+
+            25% {
+                border-color: #FF4136;
+                transform: scale(1.1);
+            }
+
+            50% {
+                border-color: #FF4136;
+                transform: scale(0.9);
+            }
+
+            75% {
+                border-color: #FF4136;
+                transform: scale(1.05);
+            }
+
+            100% {
+                border-color: #FF4136;
+                transform: scale(1);
+            }
+        }
+
+        input {
+            transition: transform 0.3s ease-in-out;
+      }
+
+        input:focus {
+            transform: translateY(-5px);
+      }
+    </style>
 </head>
 
 <body>
     {% if avatar %}
-    <img src="{{ avatar }}" alt="{{ user.username }}#{{ user.discriminator }}'s Discord profile photo" class="profile-picture">
+    <img src="{{ avatar }}" alt="{{ user.username }}#{{ user.discriminator }}'s Discord profile pic">
     {% else %}
-    <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it." class="profile-picture">
+    <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it.">
     {% endif %}
     {% if user.id %}
     <div>
@@ -46,11 +326,6 @@
     <div>
         Level {{ level }}
     </div>
-    {% if user.message_count %}
-    <div>
-        {{ user.message_count }} Messages
-    </div>
-    {% endif %}
     <div>
         {{ user.xp }} XP
     </div>
@@ -58,19 +333,27 @@
         Check Another
     </a>
     {% else %}
-    <form action="/" class="request-form">
-        <label for="identifier" class="request-label">
+    <form action="/">
+        <label for="identifier">
             Please enter a discord ID
             (<code>302094807046684672</code>)
             or friend code
             (<code>Nelly#0000</code>)
         </label>
-        <input pattern="^[ ]*([0-9]+|.*#[0-9]{4})[ ]*" name="id" id="identifier" class="textinput"
-            title="Make sure you have a valid discord ID or friend code" />
-        <input type="submit" class="btn" />
+       <input pattern="^[ ]*([0-9]+|.*#[0-9]{4})[ ]*" name="id" id="identifier" class="textinput"
+            title="Make sure you have a valid discord ID or friend code"
+            placeholder="For example, blabla#8323 Or 1076647647529672704" />
+        <div class="wrap">
+            <button class="button">Submit</button>
+        </div>
     </form>
     {% endif %}
-    <a href="/o" class="btn">
+   <button class="A14" onclick="window.location.href='/o'">View your own level</button>
+    <script>
+        function navigateTo(url) {
+            window.location.href = url;
+        }
+    </script>
         View your own level
     </a>
 </body>
