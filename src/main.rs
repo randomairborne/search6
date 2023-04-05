@@ -15,11 +15,12 @@ use xpd_rank_card::SvgState;
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().ok();
     let client_id = std::env::var("CLIENT_ID").expect("Expected client ID in environment");
     let client_secret =
         std::env::var("CLIENT_SECRET").expect("Expected client secret in environment");
     let root = std::env::var("ROOT").expect("Expected root in environment");
-    let root = std::env::var("REDIS_URL").expect("Expected redis url in environment");
+    let redis_url = std::env::var("REDIS_URL").expect("Expected redis url in environment");
     let http = reqwest::Client::new();
     let mut tera = tera::Tera::default();
     tera.add_raw_templates(vec![
@@ -27,7 +28,7 @@ async fn main() {
         ("health.html", include_str!("health.html")),
     ])
     .unwrap();
-    let mut redis_cfg = Config::from_url("redis://127.0.0.1/");
+    let redis_cfg = Config::from_url(redis_url);
     let redis = redis_cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
     let oauth = oauth2::basic::BasicClient::new(
         ClientId::new(client_id),
@@ -52,7 +53,6 @@ async fn main() {
         .route("/", get(handlers::fetch_user))
         .route("/c", get(handlers::fetch_card))
         .route("/card", get(handlers::fetch_card))
-        .route("/health", get(handlers::health))
         .route("/o", get(oauth::redirect))
         .route("/oc", get(oauth::set_id))
         .route("/style.css", get(handlers::style))
@@ -119,10 +119,11 @@ pub async fn reload_loop(state: AppState) {
             rank += 1;
         }
         let Ok(mut redis) = state.redis.get().await else { continue 'update; };
-        if let Err(redis) = redis
+        if let Err(redis_error) = redis
             .set_multiple::<String, String, ()>(&serialized_users)
             .await
         {
+            eprintln!("{redis_error:?}");
             continue 'update;
         };
         page += 1;
@@ -135,7 +136,9 @@ pub struct User {
     pub id: u64,
     pub username: String,
     pub discriminator: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub avatar: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub message_count: Option<u64>,
     pub rank: i64,
 }
@@ -174,8 +177,14 @@ pub enum Error {
     Svg(#[from] xpd_rank_card::Error),
     #[error("Redis error: {0:?}")]
     Redis(#[from] deadpool_redis::redis::RedisError),
+    #[error("Redis connection pool error: {0:?}")]
+    RedisPooling(#[from] deadpool_redis::PoolError),
+    #[error("JSON deserialization error: {0:?}")]
+    Json(#[from] serde_json::Error),
     #[error("ID not known- May not exist or may not be cached")]
     UnknownId,
+    #[error("You must specify an ID")]
+    NoId,
     #[error("This user is not ranked or may be uncached")]
     NotLevelFive,
     #[error("Invalid OAuth2 State")]

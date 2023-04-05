@@ -1,4 +1,5 @@
 use base64::Engine;
+use redis::AsyncCommands;
 
 use crate::{AppState, Error, User};
 
@@ -24,4 +25,25 @@ pub async fn get_avatar(state: &AppState, user: &User) -> Result<String, Error> 
         base64::engine::general_purpose::STANDARD.encode(png)
     );
     Ok(data)
+}
+
+pub async fn get_user(
+    mut redis: deadpool_redis::Connection,
+    id: String,
+    user_exists: bool,
+) -> Result<User, Error> {
+    let user_id = if id.chars().all(|c| c.is_ascii_digit()) {
+        id
+    } else {
+        let slug_key = format!("user.slug:{id}");
+        let id: Option<String> = redis.get(slug_key).await?;
+        id.ok_or(Error::UnknownId)?
+    };
+    let data_string_optional: Option<String> = redis.get(format!("user.id:{user_id}")).await?;
+    let data_string = if user_exists {
+        data_string_optional.ok_or(Error::NotLevelFive)?
+    } else {
+        data_string_optional.ok_or(Error::UnknownId)?
+    };
+    Ok(serde_json::from_str(&data_string)?)
 }
