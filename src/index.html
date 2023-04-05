@@ -58,6 +58,7 @@
         Check Another
     </a>
     {% else %}
+    <button onclick="writeModStringToClipboard()" class="btn"></button>
     <form action="/" class="request-form">
         <label for="identifier" class="request-label">
             Please enter a discord ID
@@ -73,6 +74,12 @@
     <a href="/o" class="btn">
         View your own level
     </a>
+    <script>
+        function writeModStringToClipboard() {
+            let requestString = "https://search6.valk.sh/card?id={{ id }} <@{{ id }}>";
+            navigator.clipboard.writeText(requestString);
+        }
+    </script>
 </body>
 
 </html>
