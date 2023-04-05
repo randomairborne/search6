@@ -51,6 +51,7 @@ async fn main() {
     tokio::spawn(reload_loop(state.clone()));
     let app = axum::Router::new()
         .route("/", get(handlers::fetch_user))
+        .route("/api", get(handlers::fetch_json))
         .route("/c", get(handlers::fetch_card))
         .route("/card", get(handlers::fetch_card))
         .route("/o", get(oauth::redirect))

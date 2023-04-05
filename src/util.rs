@@ -3,22 +3,8 @@ use redis::AsyncCommands;
 
 use crate::{AppState, Error, User};
 
-pub async fn get_avatar(state: &AppState, user: &User) -> Result<String, Error> {
-    let url = user.avatar.as_ref().map_or_else(
-        || {
-            format!(
-                "https://cdn.discordapp.com/embed/avatars/{}/{}.png",
-                user.id,
-                user.discriminator.parse().unwrap_or(1) % 5
-            )
-        },
-        |hash| {
-            format!(
-                "https://cdn.discordapp.com/avatars/{}/{}.png",
-                user.id, hash
-            )
-        },
-    );
+pub async fn get_avatar_data(state: &AppState, user: &User) -> Result<String, Error> {
+    let url = get_avatar_url(user.id, &user.discriminator, &user.avatar, false);
     let png = state.http.get(url).send().await?.bytes().await?;
     let data = format!(
         "data:image/png;base64,{}",
@@ -46,4 +32,24 @@ pub async fn get_user(
         data_string_optional.ok_or(Error::UnknownId)?
     };
     Ok(serde_json::from_str(&data_string)?)
+}
+
+pub fn get_avatar_url(id: u64, discrim: &str, hash: &Option<String>, allowgif: bool) -> String {
+    let Some(hash) = hash else {
+        return format!(
+            "https://cdn.discordapp.com/embed/avatars/{}/{}.png",
+            id,
+            discrim.parse::<u16>().unwrap_or(1) % 5
+        )
+    };
+    let ext = if allowgif {
+        if hash.starts_with("a_") {
+            "gif"
+        } else {
+            "png"
+        }
+    } else {
+        "png"
+    };
+    format!("https://cdn.discordapp.com/avatars/{id}/{hash}.{ext}")
 }
