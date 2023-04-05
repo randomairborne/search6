@@ -103,7 +103,6 @@ pub async fn reload_loop(state: AppState) {
                 continue 'insert;
             };
             let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
-            let id_key = format!("user.id:{}", player.id);
             let user = User {
                 xp: player.xp,
                 id,
@@ -114,8 +113,8 @@ pub async fn reload_loop(state: AppState) {
                 rank,
             };
             let Ok(data) = serde_json::to_string(&user) else { continue 'insert; };
-            serialized_users.push((slug_key, id_key.clone()));
-            serialized_users.push((id_key, data));
+            serialized_users.push((slug_key, id.to_string()));
+            serialized_users.push((id.to_string(), data));
             rank += 1;
         }
         let Ok(mut redis) = state.redis.get().await else { continue 'update; };
