@@ -20,7 +20,11 @@ pub async fn redirect(State(state): State<AppState>) -> Result<Redirect, Error> 
         .redis
         .get()
         .await?
-        .set_ex(format!("csrf.token:{}", csrf_token.secret()), pkce_verifier.secret(), 600)
+        .set_ex(
+            format!("csrf.token:{}", csrf_token.secret()),
+            pkce_verifier.secret(),
+            600,
+        )
         .await?;
     Ok(Redirect::to(auth_url.as_str()))
 }
