@@ -114,7 +114,7 @@ pub async fn reload_loop(state: AppState) {
             };
             let Ok(data) = serde_json::to_string(&user) else { continue 'insert; };
             serialized_users.push((slug_key, id.to_string()));
-            serialized_users.push((id.to_string(), data));
+            serialized_users.push((format!("user.id:{id}"), data));
             rank += 1;
         }
         let Ok(mut redis) = state.redis.get().await else { continue 'update; };

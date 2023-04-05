@@ -20,7 +20,7 @@
     {% if avatar %}
     <meta property="og:image" content="{{ avatar }}" />
     {% else %}
-    <meta property="og:image" content="https://seach6.valk.sh/mee6_bad.png" />
+    <meta property="og:image" content="https://search6.valk.sh/mee6_bad.png" />
     {% endif %}
     <link rel="icon" type="image/png" href="/mee6_bad.png">
     <link rel="stylesheet" href="/style.css">
@@ -29,7 +29,8 @@
 
 <body>
     {% if avatar %}
-    <img src="{{ avatar }}" alt="{{ user.username }}#{{ user.discriminator }}'s Discord profile photo" class="profile-picture">
+    <img src="{{ avatar }}" alt="{{ user.username }}#{{ user.discriminator }}'s Discord profile photo"
+        class="profile-picture">
     {% else %}
     <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it." class="profile-picture">
     {% endif %}
@@ -57,7 +58,19 @@
     <a href="/" class="btn">
         Check Another
     </a>
-    <button onclick="writeModStringToClipboard()" class="btn">Copy Request</button>
+    <button onclick="writeModStringToClipboard()" class="btn" id="copyreq">Copy Request</button>
+    <script>
+        const copyreqbtn = document.getElementById("copyreq");
+        function writeModStringToClipboard() {
+            let requestString = "https://search6.valk.sh/card?id={{ user.id }} <@{{ user.id }}>";
+            navigator.clipboard.writeText(requestString);
+            copyreqbtn.textContent = "Copy Request ✅";
+            setTimeout(() => {
+                copyreqbtn.textContent = "Copy Request";
+            },
+            1200);
+        }
+    </script>
     {% else %}
     <form action="/" class="request-form">
         <label for="identifier" class="request-label">
@@ -70,16 +83,10 @@
             title="Make sure you have a valid discord ID or friend code" />
         <input type="submit" class="btn" />
     </form>
-    {% endif %}
     <a href="/o" class="btn">
         View your own level
     </a>
-    <script>
-        function writeModStringToClipboard() {
-            let requestString = "https://search6.valk.sh/card?id={{ id }} <@{{ id }}>";
-            navigator.clipboard.writeText(requestString);
-        }
-    </script>
+    {% endif %}
 </body>
 
 </html>
