@@ -37,7 +37,7 @@ pub async fn set_id(
         .redis
         .get()
         .await?
-        .get_del::<&str, Option<String>>(&query.state)
+        .get_del::<String, Option<String>>(format!("csrf.token:{}", query.state))
         .await?
         .ok_or(Error::InvalidState)?;
     let pkce_verifier = PkceCodeVerifier::new(pkce_secret);
