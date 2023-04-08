@@ -70,7 +70,12 @@ pub async fn reload_loop(state: AppState) {
                 let old_user_level = LevelInfo::new(old_user.xp).level();
                 let new_user_level = LevelInfo::new(new_user.xp).level();
                 if new_user_level >= 5 && old_user_level < 5 {
-                    tokio::spawn(send_hook(state.clone(), new_user, new_user_level));
+                    let state = state.clone();
+                    tokio::spawn(async move {
+                        if let Err(e) = send_hook(state, new_user, new_user_level).await {
+                            eprintln!("{e:?}");
+                        }
+                    });
                 }
             }
         }
@@ -101,6 +106,10 @@ async fn send_hook(state: AppState, user: User, level: u64) -> Result<(), Error>
         .execute_webhook(state.hook_data.0, &state.hook_data.1)
         .username("search6 notifier")?
         .embeds(&[embed])?
+        .content(&format!(
+            "```https://search6.valk.sh/card?id={} <@{}>```",
+            user.id, user.id
+        ))?
         .avatar_url("https://search6.valk.sh/mee6_bad.png")
         .await?;
     Ok(())

@@ -46,7 +46,6 @@ async fn main() {
     // Set the URL the user will be redirected to after the authorization process.
     .set_redirect_uri(RedirectUrl::new(format!("{}/oc", root.trim_end_matches('/'))).unwrap());
     let hook = Arc::new(twilight_http::client::ClientBuilder::new().build());
-
     let state = AppState {
         tera: Arc::new(tera),
         oauth,
