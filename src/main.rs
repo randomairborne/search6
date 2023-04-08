@@ -27,10 +27,8 @@ async fn main() {
     let hook_id = Id::<WebhookMarker>::new(hook_id_str.parse().expect("Expected hook id: u64"));
     let http = reqwest::Client::new();
     let mut tera = tera::Tera::default();
-    tera.add_raw_templates(vec![
-        ("index.html", include_str!("index.html")),
-    ])
-    .unwrap();
+    tera.add_raw_templates(vec![("index.html", include_str!("index.html"))])
+        .unwrap();
     let redis_cfg = Config::from_url(redis_url);
     let redis = redis_cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
     let oauth = oauth2::basic::BasicClient::new(
