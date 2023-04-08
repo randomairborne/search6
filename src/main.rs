@@ -29,7 +29,6 @@ async fn main() {
     let mut tera = tera::Tera::default();
     tera.add_raw_templates(vec![
         ("index.html", include_str!("index.html")),
-        ("health.html", include_str!("health.html")),
     ])
     .unwrap();
     let redis_cfg = Config::from_url(redis_url);
