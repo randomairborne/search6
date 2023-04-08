@@ -1,16 +1,17 @@
 #![warn(clippy::all, clippy::nursery, clippy::pedantic)]
 mod handlers;
 mod oauth;
+mod reload;
 mod util;
-
 use axum::{
     response::{Html, IntoResponse},
     routing::get,
 };
 use deadpool_redis::{Config, Runtime};
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, RevocationUrl, TokenUrl};
-use redis::AsyncCommands;
 use std::sync::Arc;
+use twilight_model::id::{marker::WebhookMarker, Id};
+use twilight_util::builder::embed::image_source::ImageSourceUrlError;
 use xpd_rank_card::SvgState;
 
 #[tokio::main]
@@ -21,6 +22,9 @@ async fn main() {
         std::env::var("CLIENT_SECRET").expect("Expected client secret in environment");
     let root = std::env::var("ROOT").expect("Expected root in environment");
     let redis_url = std::env::var("REDIS_URL").expect("Expected redis url in environment");
+    let hook_id_str = std::env::var("HOOK_ID").expect("Expected hook id in environment");
+    let hook_token = std::env::var("HOOK_TOKEN").expect("Expected hook token in environment");
+    let hook_id = Id::<WebhookMarker>::new(hook_id_str.parse().expect("Expected hook id: u64"));
     let http = reqwest::Client::new();
     let mut tera = tera::Tera::default();
     tera.add_raw_templates(vec![
@@ -41,14 +45,18 @@ async fn main() {
     )
     // Set the URL the user will be redirected to after the authorization process.
     .set_redirect_uri(RedirectUrl::new(format!("{}/oc", root.trim_end_matches('/'))).unwrap());
+    let hook = Arc::new(twilight_http::client::ClientBuilder::new().build());
+
     let state = AppState {
         tera: Arc::new(tera),
         oauth,
         svg: SvgState::new(),
         http,
         redis,
+        hook,
+        hook_data: Arc::new((hook_id, hook_token)),
     };
-    tokio::spawn(reload_loop(state.clone()));
+    tokio::spawn(reload::reload_loop(state.clone()));
     let app = axum::Router::new()
         .route("/", get(handlers::fetch_user))
         .route("/api", get(handlers::fetch_json))
@@ -64,70 +72,6 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
-
-pub async fn reload_loop(state: AppState) {
-    let mut timer = tokio::time::interval(std::time::Duration::from_secs(3));
-    timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
-    let mut page = 0usize;
-    let mut rank = 1i64;
-    'update: loop {
-        timer.tick().await;
-        let resp = match state
-            .http
-            .get("https://mee6.xyz/api/plugins/levels/leaderboard/302094807046684672")
-            .query(&[("limit", 1000), ("page", page)])
-            .send()
-            .await
-        {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("{e:?}");
-                continue 'update;
-            }
-        };
-        let players: Players = match resp.json().await {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("{e:?}");
-                continue 'update;
-            }
-        };
-        let mut serialized_users: Vec<(String, String)> = Vec::with_capacity(2000);
-        'insert: for player in players.players {
-            if player.xp < 100 {
-                rank = 1;
-                page = 0;
-                continue 'update;
-            }
-            let Ok(id) = player.id.parse::<u64>() else {
-                continue 'insert;
-            };
-            let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
-            let user = User {
-                xp: player.xp,
-                id,
-                username: player.username,
-                discriminator: player.discriminator,
-                avatar: player.avatar,
-                message_count: player.message_count,
-                rank,
-            };
-            let Ok(data) = serde_json::to_string(&user) else { continue 'insert; };
-            serialized_users.push((slug_key, id.to_string()));
-            serialized_users.push((format!("user.id:{id}"), data));
-            rank += 1;
-        }
-        let Ok(mut redis) = state.redis.get().await else { continue 'update; };
-        if let Err(redis_error) = redis
-            .set_multiple::<String, String, ()>(&serialized_users)
-            .await
-        {
-            eprintln!("{redis_error:?}");
-            continue 'update;
-        };
-        page += 1;
-    }
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -165,6 +109,8 @@ pub struct AppState {
     pub http: reqwest::Client,
     pub svg: SvgState,
     pub redis: deadpool_redis::Pool,
+    pub hook: Arc<twilight_http::Client>,
+    pub hook_data: Arc<(Id<WebhookMarker>, String)>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -181,6 +127,12 @@ pub enum Error {
     RedisPooling(#[from] deadpool_redis::PoolError),
     #[error("JSON deserialization error: {0:?}")]
     Json(#[from] serde_json::Error),
+    #[error("Twilight-HTTP error: {0:?}")]
+    Twilight(#[from] twilight_http::Error),
+    #[error("Twilight-Validate error: {0:?}")]
+    TwilightValidate(#[from] twilight_validate::message::MessageValidationError),
+    #[error("Twilight-ImageSource error: {0:?}")]
+    TwilightBuilderImageSource(#[from] ImageSourceUrlError),
     #[error("ID not known- May not exist or may not be cached")]
     UnknownId,
     #[error("You must specify an ID")]
