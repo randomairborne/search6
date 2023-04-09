@@ -25,6 +25,7 @@ pub async fn fetch_user(
         "avatar",
         &get_avatar_url(user.id, &user.discriminator, &user.avatar, true),
     );
+    ctx.insert("root_url", &*state.root_url);
     Ok(Html(state.tera.render("index.html", &ctx)?))
 }
 

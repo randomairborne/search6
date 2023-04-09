@@ -7,20 +7,20 @@
     <meta property="og:type" content="website" />
     <meta property="og:title" content="search6" />
     {% if user.id %}
-    <meta property="og:url" content="https://search6.valk.sh/?id={{ user.id }}" />
+    <meta property="og:url" content="{{ root_url }}/?id={{ user.id }}" />
     <meta property="og:description"
         content="User {{ user.username }}#{{ user.discriminator }} (id {{ user.id }}) is level {{ level }}">
     <meta name="description"
         content="User {{ user.username }}#{{ user.discriminator }} (id {{ user.id }}) is level {{ level }}">
     {% else %}
-    <meta property="og:url" content="https://search6.valk.sh" />
+    <meta property="og:url" content="{{ root_url }}" />
     <meta property="og:description" content="A simple website which checks levels in the Minecraft discord">
     <meta name="description" content="A simple website which checks levels in the Minecraft discord">
     {% endif %}
     {% if avatar %}
     <meta property="og:image" content="{{ avatar }}" />
     {% else %}
-    <meta property="og:image" content="https://search6.valk.sh/mee6_bad.png" />
+    <meta property="og:image" content="{{ root_url }}/mee6_bad.png" />
     {% endif %}
     <link rel="icon" type="image/png" href="/mee6_bad.png">
     <link rel="stylesheet" href="/style.css">
@@ -58,7 +58,7 @@
     <script>
         const copyreqbtn = document.getElementById("copyreq");
         function writeModStringToClipboard() {
-            let requestString = "https://search6.valk.sh/card?id={{ user.id }} <@{{ user.id }}>";
+            let requestString = "{{ root_url }}/card?id={{ user.id }} <@{{ user.id }}>";
             navigator.clipboard.writeText(requestString);
             copyreqbtn.textContent = "Copy Request ✅";
             setTimeout(() => {

@@ -8,49 +8,52 @@ use axum::{
     routing::get,
 };
 use deadpool_redis::{Config, Runtime};
-use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, RevocationUrl, TokenUrl};
 use std::sync::Arc;
-use twilight_model::id::{marker::WebhookMarker, Id};
+use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 use twilight_util::builder::embed::image_source::ImageSourceUrlError;
 use xpd_rank_card::SvgState;
 
+#[macro_use]
+extern crate tracing;
+
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::EnvFilter::new("warn,search6=info"))
+        .init();
     dotenvy::dotenv().ok();
-    let client_id = std::env::var("CLIENT_ID").expect("Expected client ID in environment");
-    let client_secret =
-        std::env::var("CLIENT_SECRET").expect("Expected client secret in environment");
-    let root = std::env::var("ROOT").expect("Expected root in environment");
-    let redis_url = std::env::var("REDIS_URL").expect("Expected redis url in environment");
-    let hook_id_str = std::env::var("HOOK_ID").expect("Expected hook id in environment");
-    let hook_token = std::env::var("HOOK_TOKEN").expect("Expected hook token in environment");
-    let hook_id = Id::<WebhookMarker>::new(hook_id_str.parse().expect("Expected hook id: u64"));
+    let root_url = std::env::var("ROOT_URL")
+        .expect("Expected a ROOT_URL in the environment")
+        .trim_end_matches('/')
+        .to_string();
+    let redis_url = std::env::var("REDIS_URL").expect("Expected REDIS_URL in environment");
+    let oauth = util::get_oauth(&root_url);
+    let webhook = util::get_webhook();
+    if webhook.is_none() {
+        warn!("webhook functionality disabled! (if you aren't valk, you can ignore this)");
+    } else {
+        info!("Webhook level-up notifications enabled!");
+    }
+    if oauth.is_none() {
+        warn!("OAuth2 functionality disabled! (if you aren't valk, you can ignore this)");
+    } else {
+        info!("OAuth2 enabled!");
+    }
     let http = reqwest::Client::new();
     let mut tera = tera::Tera::default();
     tera.add_raw_templates(vec![("index.html", include_str!("index.html"))])
         .unwrap();
     let redis_cfg = Config::from_url(redis_url);
     let redis = redis_cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
-    let oauth = oauth2::basic::BasicClient::new(
-        ClientId::new(client_id),
-        Some(ClientSecret::new(client_secret)),
-        AuthUrl::new("https://discord.com/oauth2/authorize".to_string()).unwrap(),
-        Some(TokenUrl::new("https://discord.com/api/oauth2/token".to_string()).unwrap()),
-    )
-    .set_revocation_uri(
-        RevocationUrl::new("https://discord.com/api/oauth2/token/revoke".to_string()).unwrap(),
-    )
-    // Set the URL the user will be redirected to after the authorization process.
-    .set_redirect_uri(RedirectUrl::new(format!("{}/oc", root.trim_end_matches('/'))).unwrap());
-    let hook = Arc::new(twilight_http::client::ClientBuilder::new().build());
     let state = AppState {
         tera: Arc::new(tera),
         oauth,
         svg: SvgState::new(),
         http,
         redis,
-        hook,
-        hook_data: Arc::new((hook_id, hook_token)),
+        webhook,
+        root_url: Arc::new(root_url),
     };
     tokio::spawn(reload::reload_loop(state.clone()));
     let app = axum::Router::new()
@@ -63,7 +66,7 @@ async fn main() {
         .route("/style.css", get(handlers::style))
         .route("/mee6_bad.png", get(handlers::logo))
         .with_state(state);
-    println!("Listening on http://localhost:8080/");
+    info!("Listening on http://localhost:8080/");
     axum::Server::bind(&([0, 0, 0, 0], 8080).into())
         .serve(app.into_make_service())
         .await
@@ -101,12 +104,12 @@ pub struct Players {
 #[derive(Clone)]
 pub struct AppState {
     pub tera: Arc<tera::Tera>,
-    pub oauth: oauth2::basic::BasicClient,
+    pub oauth: Option<oauth2::basic::BasicClient>,
     pub http: reqwest::Client,
     pub svg: SvgState,
     pub redis: deadpool_redis::Pool,
-    pub hook: Arc<twilight_http::Client>,
-    pub hook_data: Arc<(Id<WebhookMarker>, String)>,
+    pub webhook: Option<util::WebhookState>,
+    pub root_url: Arc<String>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -139,6 +142,8 @@ pub enum Error {
     InvalidState,
     #[error("OAuth2 Code Exchange failed")]
     CodeExchangeFailed,
+    #[error("OAuth2 is disabled on this search6 instance")]
+    OauthDisabled,
 }
 
 impl IntoResponse for Error {

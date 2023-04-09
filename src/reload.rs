@@ -7,7 +7,7 @@ use twilight_model::{
 };
 use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
 
-use crate::{AppState, Error, Players, User};
+use crate::{util::WebhookState, AppState, Error, Players, User};
 
 #[allow(clippy::module_name_repetitions)]
 pub async fn reload_loop(state: AppState) {
@@ -26,14 +26,14 @@ pub async fn reload_loop(state: AppState) {
         {
             Ok(v) => v,
             Err(e) => {
-                eprintln!("{e:?}");
+                error!("{e:?}");
                 continue 'update;
             }
         };
         let players: Players = match resp.json().await {
             Ok(v) => v,
             Err(e) => {
-                eprintln!("{e:?}");
+                error!("{e:?}");
                 continue 'update;
             }
         };
@@ -67,19 +67,21 @@ pub async fn reload_loop(state: AppState) {
             rank += 1;
         }
         let Ok(mut redis) = state.redis.get().await else { continue 'update; };
-        if let Ok(users) = redis.mget::<Vec<String>, Vec<String>>(user_keys).await {
-            'userchecker: for string_user in users {
-                let Ok(old_user) = serde_json::from_str::<User>(&string_user) else { continue 'userchecker; };
-                let Some(new_user) = user_data.remove(&old_user.id) else { continue 'userchecker; };
-                let old_user_level = LevelInfo::new(old_user.xp).level();
-                let new_user_level = LevelInfo::new(new_user.xp).level();
-                if new_user_level >= 5 && old_user_level < 5 {
-                    let state = state.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) = send_hook(state, new_user, new_user_level).await {
-                            eprintln!("{e:?}");
-                        }
-                    });
+        if let Some(webhook) = state.webhook.clone() {
+            if let Ok(users) = redis.mget::<Vec<String>, Vec<String>>(user_keys).await {
+                'userchecker: for string_user in users {
+                    let Ok(old_user) = serde_json::from_str::<User>(&string_user) else { continue 'userchecker; };
+                    let Some(new_user) = user_data.remove(&old_user.id) else { continue 'userchecker; };
+                    let old_user_level = LevelInfo::new(old_user.xp).level();
+                    let new_user_level = LevelInfo::new(new_user.xp).level();
+                    if new_user_level >= 5 && old_user_level < 5 {
+                        let webhook = webhook.clone();
+                        tokio::spawn(async move {
+                            if let Err(e) = send_hook(webhook, new_user, new_user_level).await {
+                                error!("{e:?}");
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -87,14 +89,14 @@ pub async fn reload_loop(state: AppState) {
             .set_multiple::<String, String, ()>(&serialized_users)
             .await
         {
-            eprintln!("{redis_error:?}");
+            error!("{redis_error:?}");
             continue 'update;
         };
         page += 1;
     }
 }
 
-async fn send_hook(state: AppState, user: User, level: u64) -> Result<(), Error> {
+async fn send_hook(state: WebhookState, user: User, level: u64) -> Result<(), Error> {
     let embed = EmbedBuilder::new()
         .image(ImageSource::url(format!(
             "https://search6.valk.sh/card?id={}",
@@ -110,13 +112,12 @@ async fn send_hook(state: AppState, user: User, level: u64) -> Result<(), Error>
         .users
         .push(Id::<UserMarker>::new(187_384_089_228_214_273));
     state
-        .hook
-        .execute_webhook(state.hook_data.0, &state.hook_data.1)
+        .client
+        .execute_webhook(state.marker, &state.token)
         .username("search6 notifier")?
         .embeds(&[embed])?
         .content(&format!(
-            "```https://search6.valk.sh/card?id={} <@{}>```
-<@187384089228214273>",
+            "```https://search6.valk.sh/card?id={} <@{}>``` <@187384089228214273>",
             user.id, user.id
         ))?
         .allowed_mentions(Some(&allowedmentions))
