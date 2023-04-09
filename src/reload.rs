@@ -1,6 +1,10 @@
 use mee6::LevelInfo;
 use redis::AsyncCommands;
 use std::collections::HashMap;
+use twilight_model::{
+    channel::message::AllowedMentions,
+    id::{marker::UserMarker, Id},
+};
 use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
 
 use crate::{AppState, Error, Players, User};
@@ -101,15 +105,21 @@ async fn send_hook(state: AppState, user: User, level: u64) -> Result<(), Error>
             user.username, user.discriminator, user.id, level
         ))
         .build();
+    let mut allowedmentions = AllowedMentions::default();
+    allowedmentions
+        .users
+        .push(Id::<UserMarker>::new(187_384_089_228_214_273));
     state
         .hook
         .execute_webhook(state.hook_data.0, &state.hook_data.1)
         .username("search6 notifier")?
         .embeds(&[embed])?
         .content(&format!(
-            "```https://search6.valk.sh/card?id={} <@{}>```",
+            "```https://search6.valk.sh/card?id={} <@{}>```
+<@187384089228214273>",
             user.id, user.id
         ))?
+        .allowed_mentions(Some(&allowedmentions))
         .avatar_url("https://search6.valk.sh/mee6_bad.png")
         .await?;
     Ok(())
