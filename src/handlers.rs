@@ -12,12 +12,13 @@ pub async fn fetch_user(
     State(state): State<AppState>,
     Query(query): Query<SubmitQuery>,
 ) -> Result<Html<String>, Error> {
+    let mut ctx = tera::Context::new();
+    ctx.insert("root_url", &*state.root_url);
     let Some(id) = query.id else {
-        return Ok(Html(state.tera.render("index.html", &tera::Context::new())?))
+        return Ok(Html(state.tera.render("index.html", &ctx)?))
     };
     let user = get_user(state.redis.get().await?, id, query.userexists).await?;
     let level_info = mee6::LevelInfo::new(user.xp);
-    let mut ctx = tera::Context::new();
     ctx.insert("level", &level_info.level());
     ctx.insert("percentage", &level_info.percentage());
     ctx.insert("user", &user);
@@ -25,7 +26,6 @@ pub async fn fetch_user(
         "avatar",
         &get_avatar_url(user.id, &user.discriminator, &user.avatar, true),
     );
-    ctx.insert("root_url", &*state.root_url);
     Ok(Html(state.tera.render("index.html", &ctx)?))
 }
 
