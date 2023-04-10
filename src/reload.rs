@@ -117,7 +117,7 @@ async fn send_hook(state: WebhookState, user: User, level: u64) -> Result<(), Er
         .username("search6 notifier")?
         .embeds(&[embed])?
         .content(&format!(
-            "```https://search6.valk.sh/card?id={} <@{}>``` <@187384089228214273>",
+            "```https://search6.valk.sh/card?id={} <@{}>```",
             user.id, user.id
         ))?
         .allowed_mentions(Some(&allowedmentions))
