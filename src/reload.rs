@@ -1,13 +1,13 @@
+use crate::{util::WebhookState, AppState, Error, Players, User};
 use mee6::LevelInfo;
 use redis::AsyncCommands;
 use std::collections::HashMap;
+use std::sync::Arc;
 use twilight_model::{
     channel::message::AllowedMentions,
     id::{marker::UserMarker, Id},
 };
 use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
-
-use crate::{util::WebhookState, AppState, Error, Players, User};
 
 #[allow(clippy::module_name_repetitions)]
 pub async fn reload_loop(state: AppState) {
@@ -76,8 +76,11 @@ pub async fn reload_loop(state: AppState) {
                     let new_user_level = LevelInfo::new(new_user.xp).level();
                     if new_user_level >= 5 && old_user_level < 5 {
                         let webhook = webhook.clone();
+                        let root_url = state.root_url.clone();
                         tokio::spawn(async move {
-                            if let Err(e) = send_hook(webhook, new_user, new_user_level).await {
+                            if let Err(e) =
+                                send_hook(webhook, root_url, new_user, new_user_level).await
+                            {
                                 error!("{e:?}");
                             }
                         });
@@ -96,11 +99,16 @@ pub async fn reload_loop(state: AppState) {
     }
 }
 
-async fn send_hook(state: WebhookState, user: User, level: u64) -> Result<(), Error> {
+async fn send_hook(
+    state: WebhookState,
+    root_url: Arc<String>,
+    user: User,
+    level: u64,
+) -> Result<(), Error> {
     let embed = EmbedBuilder::new()
         .image(ImageSource::url(format!(
-            "https://search6.valk.sh/card?id={}",
-            user.id
+            "{}/card?id={}",
+            &*root_url, user.id
         ))?)
         .description(format!(
             "User {}#{} (<@{}>) has reached level {}",
