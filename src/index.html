@@ -30,7 +30,7 @@
 <body>
     {% if user.id %}
     <img src="{{ avatar | safe }}" alt="{{ user.username }}#{{ user.discriminator }}'s Discord profile photo"
-        class="profile-picture" width="512" height="512">
+        class="profile-picture" width="256" height="256">
     <div>
         User: {{ user.username }}#{{ user.discriminator }}
     </div>
@@ -68,7 +68,7 @@
         }
     </script>
     {% else %}
-    <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it." class="profile-picture" width="400" height="400">
+    <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it." class="profile-picture" width="256" height="256">
     <form action="/" class="request-form">
         <label for="identifier" class="request-label">
             Please enter a discord ID
