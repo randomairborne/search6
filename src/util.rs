@@ -43,7 +43,7 @@ pub async fn get_user(
 pub fn get_avatar_url(id: u64, discrim: &str, hash: &Option<String>, allowgif: bool) -> String {
     let Some(hash) = hash else {
         return format!(
-            "https://cdn.discordapp.com/embed/avatars/{}/{}.png",
+            "https://cdn.discordapp.com/embed/avatars/{}/{}.png?width=512&height=512",
             id,
             discrim.parse::<u16>().unwrap_or(1) % 5
         )
