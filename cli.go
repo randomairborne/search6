@@ -33,7 +33,7 @@ func main() {
 	}
 	fmt.Printf("%s#%s (%d) is level %d\n", user.Username, user.Discriminator, user.ID, user.Level)
 	if user.Level >= 5 {
-		fmt.Printf("https://search6.valk.sh/card?id=%d <@%d>", user.ID, user.ID)
+		fmt.Printf("https://search6.valk.sh/card?id=%d <@%d>\n", user.ID, user.ID)
 	}
 }
 
