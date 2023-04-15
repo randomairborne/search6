@@ -50,7 +50,7 @@ pub async fn fetch_card(
         needed: mee6::xp_needed_for_level(level_info.level() + 1),
         toy: None,
         avatar: crate::util::get_avatar_data(&state, &user).await?,
-        font: "Mojang".to_string(),
+        font: xpd_rank_card::Font::Mojang,
         colors: xpd_rank_card::colors::Colors::default(),
     };
     Ok((
