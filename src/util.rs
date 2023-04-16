@@ -46,8 +46,15 @@ pub fn get_avatar_url(id: u64, discrim: &str, hash: &Option<String>, allowgif: b
             "https://cdn.discordapp.com/embed/avatars/{}.png?width=256&height=256",
             // display the 5.png easter egg if we can't parse the discrim
             discrim.parse::<u16>().map_or(5, |v| v % 5)
-        )
+        );
     };
+    if hash.is_empty() {
+        return format!(
+            "https://cdn.discordapp.com/embed/avatars/{}.png?width=256&height=256",
+            // display the 5.png easter egg if we can't parse the discrim
+            discrim.parse::<u16>().map_or(5, |v| v % 5)
+        );
+    }
     let ext = if allowgif {
         if hash.starts_with("a_") {
             "gif"
