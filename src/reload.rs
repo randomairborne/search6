@@ -101,7 +101,7 @@ async fn send_hook(
     user: User,
     level: u64,
 ) -> Result<(), Error> {
-    let request = format!("https://search6.valk.sh/card?id={} <@{}>", user.id, user.id);
+    let request = format!("https://search6.valk.sh/card?id={0} <@{0}>", user.id);
     let embed = EmbedBuilder::new()
         .image(ImageSource::url(format!(
             "{}/card?id={}",
