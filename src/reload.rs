@@ -3,10 +3,6 @@ use mee6::LevelInfo;
 use redis::AsyncCommands;
 use std::collections::HashMap;
 use std::sync::Arc;
-use twilight_model::{
-    channel::message::AllowedMentions,
-    id::{marker::UserMarker, Id},
-};
 use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
 
 #[allow(clippy::module_name_repetitions)]
@@ -105,30 +101,23 @@ async fn send_hook(
     user: User,
     level: u64,
 ) -> Result<(), Error> {
+    let request = format!("https://search6.valk.sh/card?id={} <@{}>", user.id, user.id);
     let embed = EmbedBuilder::new()
         .image(ImageSource::url(format!(
             "{}/card?id={}",
             &*root_url, user.id
         ))?)
         .description(format!(
-            "User {}#{} (<@{}>) has reached level {}",
-            user.username, user.discriminator, user.id, level
+            "User {}#{} (<@{}>) has reached level {}```{}```",
+            user.username, user.discriminator, user.id, level, request
         ))
         .build();
-    let mut allowedmentions = AllowedMentions::default();
-    allowedmentions
-        .users
-        .push(Id::<UserMarker>::new(187_384_089_228_214_273));
     state
         .client
         .execute_webhook(state.marker, &state.token)
         .username("search6 notifier")?
         .embeds(&[embed])?
-        .content(&format!(
-            "```https://search6.valk.sh/card?id={} <@{}>```",
-            user.id, user.id
-        ))?
-        .allowed_mentions(Some(&allowedmentions))
+        .content(&request)?
         .avatar_url("https://search6.valk.sh/mee6_bad.png")
         .await?;
     Ok(())
