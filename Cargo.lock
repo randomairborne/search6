@@ -2741,9 +2741,9 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 
 [[package]]
 name = "xpd-rank-card"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3227d676a2d7a4a0d4c7ffa2b7cd6fe1558d372d2b56f293830a046c4fa7c16c"
+checksum = "9cf117e2e416e30bbb30175f12d5d8c13b8bb32b8066e58b4f01f5ae0fb55e5b"
 dependencies = [
  "png",
  "rayon",
