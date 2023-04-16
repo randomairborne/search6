@@ -43,9 +43,9 @@ pub async fn get_user(
 pub fn get_avatar_url(id: u64, discrim: &str, hash: &Option<String>, allowgif: bool) -> String {
     let Some(hash) = hash else {
         return format!(
-            "https://cdn.discordapp.com/embed/avatars/{}/{}.png?width=256&height=256",
-            id,
-            discrim.parse::<u16>().unwrap_or(1) % 5
+            "https://cdn.discordapp.com/embed/avatars/{}.png?width=256&height=256",
+            // display the 5.png easter egg if we can't parse the discrim
+            discrim.parse::<u16>().map_or(5, |v| v % 5)
         )
     };
     let ext = if allowgif {
