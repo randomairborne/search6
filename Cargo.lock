@@ -667,9 +667,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.17"
+version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66b91535aa35fea1523ad1b86cb6b53c28e0ae566ba4a460f4457e936cad7c6f"
+checksum = "17f8a914c2987b688368b5138aa05321db91f4090cf26118185672ad588bce21"
 dependencies = [
  "bytes",
  "fnv",
@@ -2741,9 +2741,9 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 
 [[package]]
 name = "xpd-rank-card"
-version = "0.0.5"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cf117e2e416e30bbb30175f12d5d8c13b8bb32b8066e58b4f01f5ae0fb55e5b"
+checksum = "b355ccd72640240b4fe5c0de423895281fec76e1fbd2121691fadfb697ff00b7"
 dependencies = [
  "png",
  "rayon",
