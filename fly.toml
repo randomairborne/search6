@@ -9,9 +9,6 @@ processes = []
 [build]
   image = "ghcr.io/randomairborne/search6:latest"
 
-[deploy]
-strategy = "rolling"
-
 [env]
 
 [experimental]
