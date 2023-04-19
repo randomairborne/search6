@@ -89,7 +89,6 @@ pub async fn fetch_svg(
     ))
 }
 
-
 #[derive(serde::Serialize)]
 pub struct ApiResponse {
     avatar_url: String,
