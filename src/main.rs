@@ -18,9 +18,10 @@ extern crate tracing;
 
 #[tokio::main]
 async fn main() {
+    let log = std::env::var("LOG").unwrap_or_else(|_e| "warn,search6=info".to_string());
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
-        .with(tracing_subscriber::EnvFilter::new("warn,search6=info"))
+        .with(tracing_subscriber::EnvFilter::new(&log))
         .init();
     dotenvy::dotenv().ok();
     let root_url = std::env::var("ROOT_URL")
@@ -61,6 +62,7 @@ async fn main() {
         .route("/api", get(handlers::fetch_json))
         .route("/c", get(handlers::fetch_card))
         .route("/card", get(handlers::fetch_card))
+        .route("/card.svg", get(handlers::fetch_svg))
         .route("/o", get(oauth::redirect))
         .route("/oc", get(oauth::set_id))
         .route("/style.css", get(handlers::style))
