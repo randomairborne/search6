@@ -46,10 +46,7 @@ pub async fn reload_loop(state: AppState) {
                 continue 'insert;
             };
             let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
-            let last_updated = std::time::SystemTime::now()
-                .duration_since(std::time::SystemTime::UNIX_EPOCH)
-                .ok()
-                .map(|v| v.as_millis());
+            let last_updated = Some(chrono::offset::Utc::now().timestamp_millis());
             let user = User {
                 xp: player.xp,
                 id,

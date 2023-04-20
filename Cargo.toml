@@ -24,4 +24,4 @@ oauth2 = "4.3"
 tera = "1.18"
 mee6 = "0.1"
 axum = "0.6"
-chrono = { version = "0.4.24", default-features = false }
+chrono = "0.4.24"
