@@ -86,6 +86,8 @@ pub struct User {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message_count: Option<u64>,
     pub rank: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_updated: Option<u128>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]

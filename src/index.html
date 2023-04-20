@@ -46,6 +46,9 @@
     <div>
         {{ user.xp }} XP
     </div>
+    <div id="update_time" hidden>
+
+    </div>
     <a href="/" class="btn">
         Check Another
     </a>
@@ -59,11 +62,16 @@
             setTimeout(() => {
                 copyreqbtn.textContent = "Copy Request";
             },
-            1200);
+                1200);
         }
+        const postDateElement = document.getElementById("update_time");
+        const postDate = new Date({{ user.last_updated }});
+        postDateElement.innerText = "Last updated: " + postDate.toLocaleString();
+        postDateElement.hidden = false;
     </script>
     {% else %}
-    <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it." class="profile-picture" width="256" height="256">
+    <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it." class="profile-picture" width="256"
+        height="256">
     <form action="/" class="request-form">
         <label for="identifier" class="request-label">
             Please enter a discord ID

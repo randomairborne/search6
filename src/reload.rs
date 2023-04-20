@@ -46,6 +46,10 @@ pub async fn reload_loop(state: AppState) {
                 continue 'insert;
             };
             let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
+            let last_updated = std::time::SystemTime::now()
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .ok()
+                .map(|v| v.as_millis());
             let user = User {
                 xp: player.xp,
                 id,
@@ -54,6 +58,7 @@ pub async fn reload_loop(state: AppState) {
                 avatar: player.avatar,
                 message_count: player.message_count,
                 rank,
+                last_updated,
             };
             let Ok(data) = serde_json::to_string(&user) else { continue 'insert; };
             serialized_users.push((slug_key, id.to_string()));
