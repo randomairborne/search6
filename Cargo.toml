@@ -1,27 +1,58 @@
 [package]
 name = "search6"
-version = "0.1.0"
 edition = "2021"
+version = "0.1.0"
 
 [dependencies]
-redis = { version = "0.22", default-features = false, features = ["ahash", "aio", "tokio-comp", "acl", "json", "cluster"] }
-reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
-twilight-util = { version = "0.15", features = ["builder", "link"] }
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-deadpool-redis = { version = "0.11", features = ["serde"] }
-serde = { version = "1.0", features = ["derive"] }
-twilight-validate = "0.15"
-twilight-model = "0.15"
-twilight-http = "0.15"
-xpd-rank-card = "0.1"
-thiserror = "1.0"
-dotenvy = "0.15"
-serde_json = "1"
-tracing = "0.1"
-base64 = "0.21"
-oauth2 = "4.3"
-tera = "1.18"
-mee6 = "0.1"
 axum = "0.6"
+base64 = "0.21"
 chrono = "0.4.24"
+dotenvy = "0.15"
+mee6 = "0.1"
+oauth2 = "4.3"
+serde_json = "1"
+tera = "1.18"
+thiserror = "1.0"
+tracing = "0.1"
+twilight-http = "0.15"
+twilight-model = "0.15"
+twilight-validate = "0.15"
+xpd-rank-card = "0.1"
+
+[dependencies.deadpool-redis]
+version = "0.11"
+features = ["rt_tokio_1", "serde_1"]
+optional = false
+default-features = false
+
+[dependencies.redis]
+version = "0.22"
+features = ["ahash", "aio", "tokio-comp", "acl", "json", "cluster"]
+optional = false
+default-features = false
+
+[dependencies.reqwest]
+version = "0.11"
+features = ["json", "rustls-tls"]
+optional = false
+default-features = false
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]
+optional = false
+
+[dependencies.tokio]
+version = "1"
+features = ["rt-multi-thread", "macros"]
+optional = false
+
+[dependencies.tracing-subscriber]
+version = "0.3"
+features = ["env-filter"]
+optional = false
+
+[dependencies.twilight-util]
+version = "0.15"
+features = ["builder", "link"]
+optional = false

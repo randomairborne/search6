@@ -46,9 +46,11 @@
     <div>
         {{ user.xp }} XP
     </div>
+    {% if user.last_updated %}
     <div id="update_time" hidden>
 
     </div>
+    {% endif %}
     <a href="/" class="btn">
         Check Another
     </a>
@@ -64,10 +66,12 @@
             },
                 1200);
         }
+        {% if user.last_updated %}
         const postDateElement = document.getElementById("update_time");
         const postDate = new Date({{ user.last_updated }});
         postDateElement.innerText = "Last updated: " + postDate.toLocaleString();
         postDateElement.hidden = false;
+        {% endif %}
     </script>
     {% else %}
     <img src="/mee6_bad.png" alt="the MEE6 logo with a red stroke through it." class="profile-picture" width="256"

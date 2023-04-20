@@ -439,7 +439,6 @@ dependencies = [
  "deadpool-runtime",
  "num_cpus",
  "retain_mut",
- "serde",
  "tokio",
 ]
 
