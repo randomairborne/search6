@@ -12,9 +12,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 deadpool-redis = { version = "0.11", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 twilight-validate = "0.15"
-xpd-rank-card = "0.0.5"
 twilight-model = "0.15"
 twilight-http = "0.15"
+xpd-rank-card = "0.1"
 thiserror = "1.0"
 dotenvy = "0.15"
 serde_json = "1"
