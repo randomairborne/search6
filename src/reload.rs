@@ -103,7 +103,7 @@ async fn send_hook(
     user: User,
     level: u64,
 ) -> Result<(), Error> {
-    let request = format!("https://{0}/card?id={1} <@{1}>", &*root_url, user.id);
+    let request = format!("{0}/card?id={1} <@{1}>", &*root_url, user.id);
     let embed = EmbedBuilder::new()
         .image(ImageSource::url(format!(
             "{}/card?id={}",
