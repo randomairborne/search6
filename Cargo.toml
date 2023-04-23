@@ -29,7 +29,7 @@ optional = false
 default-features = false
 
 [dependencies.redis]
-version = "0.22"
+version = "0.23"
 features = ["ahash", "aio", "tokio-comp", "acl", "json", "cluster"]
 optional = false
 default-features = false
