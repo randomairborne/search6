@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use base64::Engine;
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use oauth2::{
     basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, RevocationUrl, TokenUrl,
 };
@@ -107,3 +108,46 @@ pub fn get_webhook() -> Option<WebhookState> {
         token,
     })
 }
+
+pub fn time_since_epoch(update_epoch_time: i64) -> Option<Duration> {
+    let naive_update_time = NaiveDateTime::from_timestamp_millis(update_epoch_time)?;
+    let update_time = DateTime::<Utc>::from_utc(naive_update_time, Utc);
+    let duration = Utc::now().signed_duration_since(update_time);
+    Some(duration)
+}
+
+pub fn duration_fmt(duration: Duration) -> String {
+    let mut prev_set = false;
+    let mut out = String::with_capacity(128);
+    let week_count = duration.num_weeks();
+    let day_count = duration.num_days() % 7;
+    let hour_count = duration.num_hours() % 24;
+    let minute_count = duration.num_minutes() % 60;
+    let second_count = duration.num_seconds() % 60;
+
+    fmt_unit!(out, week_count, "week", prev_set);
+    fmt_unit!(out, day_count, "day", prev_set);
+    fmt_unit!(out, hour_count, "hour", prev_set);
+    fmt_unit!(out, minute_count, "minute", prev_set);
+    fmt_unit!(out, second_count, "second", prev_set);
+    out
+}
+
+macro_rules! fmt_unit {
+    ($out:expr, $num:expr, $unit_name:expr, $pset:expr) => {
+        #[allow(unused_assignments)]
+        if $num != 0 {
+            if $pset {
+                $out.push_str(", ");
+            }
+            $out.push_str(&$num.to_string());
+            if $num == 1 {
+                $out.push_str(concat!(" ", $unit_name));
+            } else {
+                $out.push_str(concat!(" ", $unit_name, "s"));
+            }
+            $pset = true;
+        }
+    };
+}
+use fmt_unit;

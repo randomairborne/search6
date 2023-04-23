@@ -43,7 +43,7 @@ async fn main() {
     }
     let http = reqwest::Client::new();
     let mut tera = tera::Tera::default();
-    tera.add_raw_templates(vec![("index.html", include_str!("index.html"))])
+    tera.add_raw_templates(vec![("index.html", include_str!("resources/index.html"))])
         .unwrap();
     let redis_cfg = Config::from_url(redis_url);
     let redis = redis_cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
@@ -66,7 +66,9 @@ async fn main() {
         .route("/o", get(oauth::redirect))
         .route("/oc", get(oauth::set_id))
         .route("/style.css", get(handlers::style))
-        .route("/mee6_bad.png", get(handlers::logo))
+        .route("/mee6_bad.png", get(handlers::mee6bad))
+        .route("/search6.png", get(handlers::logo))
+        .route("/minecraft.woff", get(handlers::font))
         .with_state(state);
     info!("Listening on http://localhost:8080/");
     axum::Server::bind(&([0, 0, 0, 0], 8080).into())
@@ -154,7 +156,7 @@ impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let mut context = tera::Context::new();
         context.insert("error", &self.to_string());
-        match tera::Tera::one_off(include_str!("error.html"), &context, true) {
+        match tera::Tera::one_off(include_str!("resources/error.html"), &context, true) {
             Ok(v) => Html(v).into_response(),
             Err(e) => format!(
                 "There was an error while processing your request.

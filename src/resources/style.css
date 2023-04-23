@@ -1,5 +1,12 @@
+@font-face {
+    font-family: "Minecraft";
+    src: url('/minecraft.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Minecraft', sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -12,6 +19,7 @@ body {
 }
 
 code {
+    font: 'Minecraft', sans-serif;
     background-color: #4f4f4f;
     padding-left: 4px;
     padding-right: 4px;
@@ -21,6 +29,21 @@ code {
 
 body>* {
     margin-top: 2vh;
+}
+
+.lookup-container {
+    display: flex;
+}
+
+@media screen and (max-width: 800px) {
+    .lookup-container {
+        flex-direction: column;
+    }
+}
+
+.lookup-pad {
+    min-width: 10vw;
+    min-height: 10vh;
 }
 
 .request-form {
@@ -39,30 +62,34 @@ body>* {
 }
 
 .btn {
+    display: flex;
     padding-top: 2vh;
     padding-bottom: 2vh;
     padding-left: 2vw;
     padding-right: 2vw;
+    font-size: x-large;
+    font-family: 'Minecraft', sans-serif;
     background-color: #333333;
     color: aqua;
     border-radius: 5px;
     border: none;
-    text-decoration: underline;
+    text-decoration: none;
+    align-items: center;
+    justify-content: center;
 }
 
 .textinput {
     border-radius: 5px;
-    width: 40vw;
     font-size: xx-large;
     text-align: center;
     background-color: #111111;
     border-color: #4f4f4f;
     border-style: groove;
     caret-color: #FFFFFF;
-    padding: 2px;
     color: #FFFFFF;
-    margin-bottom: 2vh;
     border: none;
+    font-family: 'Minecraft', sans-serif;
+    min-height: 100%;
 }
 
 .textinput:focus {
@@ -87,4 +114,43 @@ body>* {
     background-color: #333333;
     color: aqua;
     border-radius: 1vh;
+}
+
+.logo {
+    max-height: 10vh;
+    width: auto;
+    position: fixed;
+    top: 0;
+}
+
+.github-corner:hover .octo-arm {
+    animation: octocat-wave 560ms ease-in-out
+}
+
+@keyframes octocat-wave {
+
+    0%,
+    100% {
+        transform: rotate(0)
+    }
+
+    20%,
+    60% {
+        transform: rotate(-25deg)
+    }
+
+    40%,
+    80% {
+        transform: rotate(10deg)
+    }
+}
+
+@media (max-width:500px) {
+    .github-corner:hover .octo-arm {
+        animation: none
+    }
+
+    .github-corner .octo-arm {
+        animation: octocat-wave 560ms ease-in-out
+    }
 }

@@ -1,5 +1,5 @@
 use crate::{
-    util::{get_avatar_url, get_user},
+    util::{self, get_avatar_url, get_user},
     AppState, Error, User,
 };
 use axum::{
@@ -26,6 +26,11 @@ pub async fn fetch_user(
         "avatar",
         &get_avatar_url(user.id, &user.discriminator, &user.avatar, true),
     );
+    if let Some(epoch_updated) = user.last_updated {
+        if let Some(dur) = util::time_since_epoch(epoch_updated) {
+            ctx.insert("user_last_update", &util::duration_fmt(dur));
+        }
+    }
     Ok(Html(state.tera.render("index.html", &ctx)?))
 }
 
@@ -131,14 +136,33 @@ const fn rfalse() -> bool {
 }
 
 #[allow(clippy::unused_async)]
+pub async fn mee6bad() -> ([(&'static str, &'static str); 1], &'static [u8]) {
+    (
+        [("Content-Type", "image/png")],
+        include_bytes!("resources/mee6_bad.png"),
+    )
+}
+
+#[allow(clippy::unused_async)]
 pub async fn logo() -> ([(&'static str, &'static str); 1], &'static [u8]) {
     (
         [("Content-Type", "image/png")],
-        include_bytes!("mee6_bad.png"),
+        include_bytes!("resources/search6.png"),
     )
 }
 
 #[allow(clippy::unused_async)]
 pub async fn style() -> ([(&'static str, &'static str); 1], &'static str) {
-    ([("Content-Type", "text/css")], include_str!("style.css"))
+    (
+        [("Content-Type", "text/css")],
+        include_str!("resources/style.css"),
+    )
+}
+
+#[allow(clippy::unused_async)]
+pub async fn font() -> ([(&'static str, &'static str); 1], &'static [u8]) {
+    (
+        [("Content-Type", "font/woff")],
+        include_bytes!("resources/minecraft.woff"),
+    )
 }
