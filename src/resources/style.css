@@ -39,21 +39,22 @@ body>* {
     .lookup-container {
         flex-direction: column;
     }
+    .lookup-pad {
+        min-height: 10vh;
+    }
 }
 
-.overlaid-button {
-    margin-left: -50%;
-    border: none;
-    background-color: transparent !important;
+@media screen and (min-width: 801px) {
+    .lookup-container {
+        flex-direction: row;
+    }
+    .lookup-pad {
+        min-width: 10vw;
+    }
 }
 
 .buttonwrapper {
     display: inline-block;
-}
-
-.lookup-pad {
-    min-width: 10vw;
-    min-height: 10vh;
 }
 
 .request-form {
@@ -88,6 +89,10 @@ body>* {
     justify-content: center;
 }
 
+.textinput-spacer {
+    height: 1ch;
+}
+
 .textinput {
     border-radius: 5px;
     font-size: xx-large;
@@ -99,8 +104,8 @@ body>* {
     color: #FFFFFF;
     border: none;
     font-family: 'Minecraft', sans-serif;
-    min-height: 100%;
-    margin-bottom: 2ch;
+    min-height: 2em;
+    max-width: 80vw;
 }
 
 .textinput:focus {
