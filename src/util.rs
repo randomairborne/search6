@@ -100,6 +100,10 @@ pub async fn get_user_context(
     user_exists: bool,
 ) -> Result<xpd_rank_card::Context, Error> {
     let user = get_user(state.redis.get().await?, id, user_exists).await?;
+    user_context(state, user).await
+}
+
+pub async fn user_context(state: &AppState, user: User) -> Result<xpd_rank_card::Context, Error> {
     let level_info = mee6::LevelInfo::new(user.xp);
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let ctx = xpd_rank_card::Context {

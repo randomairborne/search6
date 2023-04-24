@@ -66,8 +66,8 @@ pub async fn reload_loop(state: AppState) {
         }
         let Ok(mut redis) = state.redis.get().await else { continue 'update; };
         if let Some(webhook) = state.webhook.clone() {
-            if let Ok(users) = redis.mget::<Vec<String>, Vec<String>>(user_keys).await {
-                'userchecker: for string_user in users {
+            if let Ok(old_users) = redis.mget::<Vec<String>, Vec<String>>(user_keys).await {
+                'userchecker: for string_user in old_users {
                     let Ok(old_user) = serde_json::from_str::<User>(&string_user) else { continue 'userchecker; };
                     let Some(new_user) = user_data.remove(&old_user.id) else { continue 'userchecker; };
                     let old_user_level = LevelInfo::new(old_user.xp).level();
@@ -115,7 +115,7 @@ async fn send_hook(
             user.username, user.discriminator, user.id, level, request
         ))
         .build();
-    let card_svg = crate::util::get_user_context(state, user.id.to_string(), true).await?;
+    let card_svg = crate::util::user_context(state, user).await?;
     let card_raster = state.svg.render(card_svg).await?;
     let card = Attachment {
         description: None,
