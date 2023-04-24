@@ -20,12 +20,12 @@ extern crate tracing;
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().ok();
     let log = std::env::var("LOG").unwrap_or_else(|_e| "warn,search6=info".to_string());
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .with(tracing_subscriber::EnvFilter::new(&log))
         .init();
-    dotenvy::dotenv().ok();
     let root_url = std::env::var("ROOT_URL")
         .expect("Expected a ROOT_URL in the environment")
         .trim_end_matches('/')
