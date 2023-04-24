@@ -10,7 +10,9 @@ use axum::{
 use deadpool_redis::{Config, Runtime};
 use std::sync::Arc;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
-use twilight_util::builder::embed::image_source::ImageSourceUrlError;
+use twilight_util::builder::embed::image_source::{
+    ImageSourceAttachmentError, ImageSourceUrlError,
+};
 use xpd_rank_card::SvgState;
 
 #[macro_use]
@@ -136,8 +138,10 @@ pub enum Error {
     Twilight(#[from] twilight_http::Error),
     #[error("Twilight-Validate error: {0:?}")]
     TwilightValidate(#[from] twilight_validate::message::MessageValidationError),
-    #[error("Twilight-ImageSource error: {0:?}")]
-    TwilightBuilderImageSource(#[from] ImageSourceUrlError),
+    #[error("Twilight-ImageSource:URL error: {0:?}")]
+    TwilightBuilderImageSourceUrl(#[from] ImageSourceUrlError),
+    #[error("Twilight-ImageSource:Attachment error: {0:?}")]
+    TwilightBuilderImageSourceAttachment(#[from] ImageSourceAttachmentError),
     #[error("ID not known- May not exist or may not be cached")]
     UnknownId,
     #[error("You must specify an ID")]

@@ -42,22 +42,7 @@ pub async fn fetch_card(
     let Some(id) = query.id else {
         return Err(Error::NoId);
     };
-    let user = get_user(state.redis.get().await?, id, query.userexists).await?;
-    let level_info = mee6::LevelInfo::new(user.xp);
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let ctx = xpd_rank_card::Context {
-        level: level_info.level(),
-        rank: user.rank,
-        name: user.username.clone(),
-        discriminator: user.discriminator.clone(),
-        percentage: (level_info.percentage() * 100.0).round() as u64,
-        current: level_info.xp(),
-        needed: mee6::xp_needed_for_level(level_info.level() + 1),
-        toy: None,
-        avatar: crate::util::get_avatar_data(&state, &user).await?,
-        font: xpd_rank_card::Font::Mojang,
-        colors: xpd_rank_card::colors::Colors::default(),
-    };
+    let ctx = util::get_user_context(&state, id, query.userexists).await?;
     Ok((
         [("Content-Type", "image/png")],
         state.svg.render(ctx).await?,
@@ -72,22 +57,7 @@ pub async fn fetch_svg(
     let Some(id) = query.id else {
         return Err(Error::NoId);
     };
-    let user = get_user(state.redis.get().await?, id, query.userexists).await?;
-    let level_info = mee6::LevelInfo::new(user.xp);
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let ctx = xpd_rank_card::Context {
-        level: level_info.level(),
-        rank: user.rank,
-        name: user.username.clone(),
-        discriminator: user.discriminator.clone(),
-        percentage: (level_info.percentage() * 100.0).round() as u64,
-        current: level_info.xp(),
-        needed: mee6::xp_needed_for_level(level_info.level() + 1),
-        toy: None,
-        avatar: crate::util::get_avatar_data(&state, &user).await?,
-        font: xpd_rank_card::Font::Mojang,
-        colors: xpd_rank_card::colors::Colors::default(),
-    };
+    let ctx = util::get_user_context(&state, id, query.userexists).await?;
     Ok((
         [("Content-Type", "image/svg+xml")],
         state.svg.render_svg(ctx)?,

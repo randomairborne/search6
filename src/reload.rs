@@ -2,7 +2,7 @@ use crate::{util::WebhookState, AppState, Error, Players, User};
 use mee6::LevelInfo;
 use redis::AsyncCommands;
 use std::collections::HashMap;
-use std::sync::Arc;
+use twilight_model::http::attachment::Attachment;
 use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
 
 #[allow(clippy::module_name_repetitions)]
@@ -73,11 +73,11 @@ pub async fn reload_loop(state: AppState) {
                     let old_user_level = LevelInfo::new(old_user.xp).level();
                     let new_user_level = LevelInfo::new(new_user.xp).level();
                     if new_user_level >= 5 && old_user_level < 5 {
-                        let webhook = webhook.clone();
-                        let root_url = state.root_url.clone();
+                        let state = state.clone();
+                        let whstate = webhook.clone();
                         tokio::spawn(async move {
                             if let Err(e) =
-                                send_hook(webhook, root_url, new_user, new_user_level).await
+                                send_hook(&state, &whstate, new_user, new_user_level).await
                             {
                                 error!("{e:?}");
                             }
@@ -98,26 +98,36 @@ pub async fn reload_loop(state: AppState) {
 }
 
 async fn send_hook(
-    state: WebhookState,
-    root_url: Arc<String>,
+    state: &AppState,
+    webhook: &WebhookState,
     user: User,
     level: u64,
 ) -> Result<(), Error> {
-    let request = format!("{0}/card?id={1} <@{1}>", &*root_url, user.id);
+    let request = format!("{0}/card?id={1} <@{1}>", &*state.root_url, user.id);
     let embed = EmbedBuilder::new()
-        .image(ImageSource::url(format!(
-            "{}/card?id={}",
-            &*root_url, user.id
+        .image(ImageSource::attachment("card.png")?)
+        .thumbnail(ImageSource::url(format!(
+            "{}/search6.png",
+            &*state.root_url
         ))?)
         .description(format!(
             "User {}#{} (<@{}>) has reached level {}```{}```",
             user.username, user.discriminator, user.id, level, request
         ))
         .build();
-    state
+    let card_svg = crate::util::get_user_context(state, user.id.to_string(), true).await?;
+    let card_raster = state.svg.render(card_svg).await?;
+    let card = Attachment {
+        description: None,
+        file: card_raster,
+        filename: "card.png".to_string(),
+        id: 0,
+    };
+    webhook
         .client
-        .execute_webhook(state.marker, &state.token)
+        .execute_webhook(webhook.marker, &webhook.token)
         .username("search6 notifier")?
+        .attachments(&[card])?
         .embeds(&[embed])?
         .content(&request)?
         .avatar_url("https://search6.valk.sh/mee6_bad.png")

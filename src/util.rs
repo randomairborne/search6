@@ -30,7 +30,11 @@ pub async fn get_user(
     } else {
         let slug_key = format!("user.slug:{id}");
         let id: Option<String> = redis.get(slug_key).await?;
-        id.ok_or(Error::UnknownId)?
+        if user_exists {
+            id.ok_or(Error::NotLevelFive)?
+        } else {
+            id.ok_or(Error::UnknownId)?
+        }
     };
     let data_string_optional: Option<String> = redis.get(format!("user.id:{user_id}")).await?;
     let data_string = if user_exists {
@@ -88,6 +92,30 @@ pub fn get_oauth(root_url: &str) -> Option<BasicClient> {
     // Set the URL the user will be redirected to after the authorization process.
     .set_redirect_uri(RedirectUrl::new(format!("{root_url}/oc")).unwrap());
     Some(oauth)
+}
+
+pub async fn get_user_context(
+    state: &AppState,
+    id: String,
+    user_exists: bool,
+) -> Result<xpd_rank_card::Context, Error> {
+    let user = get_user(state.redis.get().await?, id, user_exists).await?;
+    let level_info = mee6::LevelInfo::new(user.xp);
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let ctx = xpd_rank_card::Context {
+        level: level_info.level(),
+        rank: user.rank,
+        name: user.username.clone(),
+        discriminator: user.discriminator.clone(),
+        percentage: (level_info.percentage() * 100.0).round() as u64,
+        current: level_info.xp(),
+        needed: mee6::xp_needed_for_level(level_info.level() + 1),
+        toy: None,
+        avatar: crate::util::get_avatar_data(state, &user).await?,
+        font: xpd_rank_card::Font::Mojang,
+        colors: xpd_rank_card::colors::Colors::default(),
+    };
+    Ok(ctx)
 }
 
 #[derive(Clone)]
