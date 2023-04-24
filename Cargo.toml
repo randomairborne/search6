@@ -23,13 +23,13 @@ version = "0.4"
 default-features = false
 
 [dependencies.deadpool-redis]
-version = "0.11"
+version = "0.12"
 features = ["rt_tokio_1", "serde_1"]
 optional = false
 default-features = false
 
 [dependencies.redis]
-version = "0.22"
+version = "0.23"
 features = ["ahash", "aio", "tokio-comp", "acl", "json", "cluster"]
 optional = false
 default-features = false

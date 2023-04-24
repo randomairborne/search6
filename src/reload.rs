@@ -86,10 +86,7 @@ pub async fn reload_loop(state: AppState) {
                 }
             }
         }
-        if let Err(redis_error) = redis
-            .set_multiple::<String, String, ()>(&serialized_users)
-            .await
-        {
+        if let Err(redis_error) = redis.mset::<String, String, ()>(&serialized_users).await {
             error!("{redis_error:?}");
             continue 'update;
         };
