@@ -10,6 +10,7 @@ processes = []
   image = "ghcr.io/randomairborne/search6:latest"
 
 [env]
+  GUILD_ID = 302094807046684672
 
 [experimental]
   auto_rollback = true

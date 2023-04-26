@@ -10,6 +10,7 @@ use axum::{
 use deadpool_redis::{Config, Runtime};
 use std::sync::Arc;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
+use twilight_model::id::{marker::GuildMarker, Id};
 use twilight_util::builder::embed::image_source::{
     ImageSourceAttachmentError, ImageSourceUrlError,
 };
@@ -30,6 +31,10 @@ async fn main() {
         .expect("Expected a ROOT_URL in the environment")
         .trim_end_matches('/')
         .to_string();
+    let guild_id: Id<GuildMarker> = std::env::var("GUILD_ID")
+        .expect("Expected a GUILD_ID in the environment")
+        .parse()
+        .expect("Expected valid server ID in GUILD_ID");
     let redis_url = std::env::var("REDIS_URL").expect("Expected REDIS_URL in environment");
     let oauth = util::get_oauth(&root_url);
     let webhook = util::get_webhook();
@@ -56,6 +61,7 @@ async fn main() {
         http,
         redis,
         webhook,
+        guild_id,
         root_url: Arc::new(root_url),
     };
     tokio::spawn(reload::reload_loop(state.clone()));
@@ -117,6 +123,7 @@ pub struct AppState {
     pub svg: SvgState,
     pub redis: deadpool_redis::Pool,
     pub webhook: Option<util::WebhookState>,
+    pub guild_id: Id<GuildMarker>,
     pub root_url: Arc<String>,
 }
 
