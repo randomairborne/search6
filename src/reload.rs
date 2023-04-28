@@ -15,7 +15,10 @@ pub async fn reload_loop(state: AppState) {
         timer.tick().await;
         let resp = match state
             .http
-            .get("https://mee6.xyz/api/plugins/levels/leaderboard/302094807046684672")
+            .get(format!(
+                "https://mee6.xyz/api/plugins/levels/leaderboard/{}",
+                state.guild_id
+            ))
             .query(&[("limit", 1000), ("page", page)])
             .send()
             .await
@@ -120,14 +123,18 @@ async fn send_hook(
         filename: "card.png".to_string(),
         id: 0,
     };
-    webhook
+    let mut hook_builder = webhook
         .client
         .execute_webhook(webhook.marker, &webhook.token)
         .username("search6 notifier")?
+        .avatar_url("https://search6.valk.sh/mee6_bad.png");
+    if let Some(thread_id) = webhook.thread {
+        hook_builder = hook_builder.thread_id(thread_id);
+    };
+    hook_builder
+        .content(&request)?
         .attachments(&[card])?
         .embeds(&[embed])?
-        .content(&request)?
-        .avatar_url("https://search6.valk.sh/mee6_bad.png")
         .await?;
     Ok(())
 }

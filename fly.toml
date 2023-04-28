@@ -1,45 +1,46 @@
-# fly.toml file generated for search6 on 2023-04-06T16:42:42-06:00
+# fly.toml app configuration file generated for search6 on 2023-04-26T18:08:02Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "search6"
-kill_signal = "SIGINT"
-kill_timeout = 5
 primary_region = "den"
-processes = []
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[experimental]
+  auto_rollback = true
 
 [build]
   image = "ghcr.io/randomairborne/search6:latest"
 
 [env]
-
-[experimental]
-  auto_rollback = true
+  GUILD_ID = "302094807046684672"
+  PRIMARY_REGION = "den"
 
 [[services]]
-  tcp_checks = []
+  protocol = "tcp"
   internal_port = 8080
   processes = ["app"]
-  protocol = "tcp"
-  script_checks = []
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
   [services.concurrency]
+    type = "requests"
     hard_limit = 250
     soft_limit = 200
-    type = "requests"
-
-  [[services.ports]]
-    force_https = true
-    handlers = ["http"]
-    port = 80
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
 
   [[services.http_checks]]
-    interval = 10000
+    interval = "10s"
+    timeout = "2s"
     grace_period = "5s"
+    restart_limit = 0
     method = "get"
     path = "/?id=788222689126776832"
     protocol = "http"
-    restart_limit = 0
-    timeout = 2000
-    tls_skip_verify = false

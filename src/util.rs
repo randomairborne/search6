@@ -6,7 +6,10 @@ use oauth2::{
     basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, RevocationUrl, TokenUrl,
 };
 use redis::AsyncCommands;
-use twilight_model::id::{marker::WebhookMarker, Id};
+use twilight_model::id::{
+    marker::{ChannelMarker, WebhookMarker},
+    Id,
+};
 
 use crate::{AppState, Error, User};
 
@@ -127,10 +130,14 @@ pub struct WebhookState {
     pub client: Arc<twilight_http::Client>,
     pub marker: Id<WebhookMarker>,
     pub token: Arc<String>,
+    pub thread: Option<Id<ChannelMarker>>,
 }
 
 pub fn get_webhook() -> Option<WebhookState> {
     let url = std::env::var("WEBHOOK").ok()?;
+    let thread: Option<Id<ChannelMarker>> = std::env::var("THREAD_ID")
+        .ok()
+        .map(|v| v.parse().expect("Invalid thread id"));
     let (marker, webhook_token) =
         twilight_util::link::webhook::parse(&url).expect("Error parsing webhook URL");
     let token = Arc::new(webhook_token.expect("Missing webhook token").to_string());
@@ -138,6 +145,7 @@ pub fn get_webhook() -> Option<WebhookState> {
         client: Arc::new(twilight_http::client::ClientBuilder::new().build()),
         marker,
         token,
+        thread,
     })
 }
 
