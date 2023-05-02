@@ -1,4 +1,4 @@
-use crate::{util::WebhookState, AppState, Error, Players, User, Player};
+use crate::{util::WebhookState, AppState, Error, Player, Players, User};
 use mee6::LevelInfo;
 use redis::AsyncCommands;
 use std::collections::HashMap;
@@ -9,6 +9,9 @@ use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
 pub async fn reload_loop(state: AppState) {
     let mut timer = tokio::time::interval(std::time::Duration::from_secs(3));
     timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    let mut redis = state.redis.get().await.unwrap();
+    let _: () = redis.set_nx("sync:rank", 1).await.unwrap();
+    drop(redis);
     loop {
         timer.tick().await;
         if let Err(e) = get_page(state.clone()).await {
@@ -18,9 +21,11 @@ pub async fn reload_loop(state: AppState) {
 }
 
 async fn get_page(state: AppState) -> Result<(), Error> {
-    let redis = state.redis.get().await?;
-    let page = redis.incr("sync:page", 1).await? - 1;
-    let rank = redis.get("sync:rank", 1).await? - 1;
+    let mut redis = state.redis.get().await?;
+    let page: i64 = redis.incr("sync:page", 1).await?;
+    trace!("Fetching page {page}");
+    let page = page - 1;
+    let mut rank: i64 = redis.get("sync:rank").await?;
     let resp = state
         .http
         .get(format!(
@@ -32,14 +37,27 @@ async fn get_page(state: AppState) -> Result<(), Error> {
         .await?;
     let players: Players = resp.json().await?;
     let mut serialized_users: Vec<(String, String)> = Vec::with_capacity(2000);
-    let mut user_keys: Vec<String> = Vec::with_capacity(1000);
     let mut user_data: HashMap<u64, User> = HashMap::with_capacity(1000);
     for player in players.players {
-        if let Err(e) = add_player(state.clone()).await {
-            error!("{e:?}");
-        }
+        match add_player(state.clone(), player, rank).await {
+            Ok(mut keyvalues) => {
+                serialized_users.append(&mut keyvalues);
+                rank += 1;
+            }
+            Err(e) => {
+                error!("{e:?}");
+                continue;
+            }
+        };
+    }
+    if let Err(e) = redis.incr::<_, _, ()>("sync:rank", user_data.len()).await {
+        error!("{e:?}");
     }
     if let Some(webhook) = state.webhook.clone() {
+        let mut user_keys: Vec<String> = Vec::with_capacity(user_data.len());
+        for key in user_data.keys() {
+            user_keys.push(format!("user.id:{key}"));
+        }
         if let Ok(old_users) = redis.mget::<Vec<String>, Vec<String>>(user_keys).await {
             'userchecker: for string_user in old_users {
                 let Ok(old_user) = serde_json::from_str::<User>(&string_user) else { continue 'userchecker; };
@@ -63,14 +81,18 @@ async fn get_page(state: AppState) -> Result<(), Error> {
     Ok(())
 }
 
-async fn add_player(state: AppState, player: Player) -> Result<(), Error> {
-    let redis = state.redis.get().await?;
+async fn add_player(
+    state: AppState,
+    player: Player,
+    rank: i64,
+) -> Result<Vec<(String, String)>, Error> {
+    let mut redis = state.redis.get().await?;
     if player.xp < 100 {
-        redis.mset(&[("sync:page", 0), ("sync:rank", 0)]).await?;                                                                                                                                                  
-        return Ok(());
+        redis.mset(&[("sync:page", 0), ("sync:rank", 0)]).await?;
     }
     let id = player.id.parse::<u64>()?;
     let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
+    let id_slug = format!("user.id:{id}");
     let last_updated = Some(chrono::offset::Utc::now().timestamp_millis());
     let user = User {
         xp: player.xp,
@@ -82,12 +104,8 @@ async fn add_player(state: AppState, player: Player) -> Result<(), Error> {
         rank,
         last_updated,
     };
-    let Ok(data) = serde_json::to_string(&user) else { continue 'insert; };
-    serialized_users.push((slug_key, id.to_string()));
-    serialized_users.push((format!("user.id:{id}"), data));
-    user_keys.push(format!("user.id:{id}"));
-    user_data.insert(user.id, user);
-    Ok(())
+    let data = serde_json::to_string(&user)?;
+    Ok(vec![(slug_key, id.to_string()), (id_slug, data)])
 }
 
 async fn send_hook(
