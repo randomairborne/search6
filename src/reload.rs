@@ -5,27 +5,33 @@ use std::collections::HashMap;
 use twilight_model::http::attachment::Attachment;
 use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
 
+const PAGE_KEY: &str = "sync:page";
+const RANK_KEY: &str = "sync:rank";
+
 #[allow(clippy::module_name_repetitions)]
 pub async fn reload_loop(state: AppState) {
     let mut timer = tokio::time::interval(std::time::Duration::from_secs(3));
-    timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let mut redis = state.redis.get().await.unwrap();
-    let _: () = redis.set_nx("sync:rank", 1).await.unwrap();
+    let _: () = redis.set_nx(RANK_KEY, 1).await.unwrap();
     drop(redis);
     loop {
         timer.tick().await;
-        if let Err(e) = get_page(state.clone()).await {
-            error!("{e:?}");
-        }
+        let state = state.clone();
+        tokio::spawn(async move {
+            if let Err(e) = get_page(state.clone()).await {
+                error!("{e:?}");
+            }
+        });
     }
 }
 
 async fn get_page(state: AppState) -> Result<(), Error> {
     let mut redis = state.redis.get().await?;
-    let page: i64 = redis.incr("sync:page", 1).await?;
+    let page: i64 = redis.incr(PAGE_KEY, 1).await?;
     trace!("Fetching page {page}");
     let page = page - 1;
-    let mut rank: i64 = redis.get("sync:rank").await?;
+    let mut rank: i64 = redis.get(RANK_KEY).await?;
     let resp = state
         .http
         .get(format!(
@@ -39,9 +45,18 @@ async fn get_page(state: AppState) -> Result<(), Error> {
     let mut serialized_users: Vec<(String, String)> = Vec::with_capacity(2000);
     let mut user_data: HashMap<u64, User> = HashMap::with_capacity(1000);
     for player in players.players {
-        match add_player(state.clone(), player, rank).await {
-            Ok(mut keyvalues) => {
-                serialized_users.append(&mut keyvalues);
+        match player_to_user(state.clone(), player, rank).await {
+            Ok(user) => {
+                let Ok(user_string) = serde_json::to_string(&user) else {
+                    error!("Failed to serialize user struct");
+                    continue;
+                };
+                serialized_users.push((
+                    format!("user.name:{}#{}", user.username, user.discriminator),
+                    user.id.to_string(),
+                ));
+                serialized_users.push((format!("user.id:{}", user.id), user_string));
+                user_data.insert(user.id, user);
                 rank += 1;
             }
             Err(e) => {
@@ -50,7 +65,7 @@ async fn get_page(state: AppState) -> Result<(), Error> {
             }
         };
     }
-    if let Err(e) = redis.incr::<_, _, ()>("sync:rank", user_data.len()).await {
+    if let Err(e) = redis.incr::<_, _, ()>(RANK_KEY, user_data.len()).await {
         error!("{e:?}");
     }
     if let Some(webhook) = state.webhook.clone() {
@@ -81,18 +96,12 @@ async fn get_page(state: AppState) -> Result<(), Error> {
     Ok(())
 }
 
-async fn add_player(
-    state: AppState,
-    player: Player,
-    rank: i64,
-) -> Result<Vec<(String, String)>, Error> {
+async fn player_to_user(state: AppState, player: Player, rank: i64) -> Result<User, Error> {
     let mut redis = state.redis.get().await?;
     if player.xp < 100 {
-        redis.mset(&[("sync:page", 0), ("sync:rank", 1)]).await?;
+        redis.mset(&[(PAGE_KEY, 0), (RANK_KEY, 1)]).await?;
     }
     let id = player.id.parse::<u64>()?;
-    let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
-    let id_slug = format!("user.id:{id}");
     let last_updated = Some(chrono::offset::Utc::now().timestamp_millis());
     let user = User {
         xp: player.xp,
@@ -104,8 +113,7 @@ async fn add_player(
         rank,
         last_updated,
     };
-    let data = serde_json::to_string(&user)?;
-    Ok(vec![(slug_key, id.to_string()), (id_slug, data)])
+    Ok(user)
 }
 
 async fn send_hook(
