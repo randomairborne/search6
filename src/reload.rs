@@ -88,7 +88,7 @@ async fn add_player(
 ) -> Result<Vec<(String, String)>, Error> {
     let mut redis = state.redis.get().await?;
     if player.xp < 100 {
-        redis.mset(&[("sync:page", 0), ("sync:rank", 0)]).await?;
+        redis.mset(&[("sync:page", 0), ("sync:rank", 1)]).await?;
     }
     let id = player.id.parse::<u64>()?;
     let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
