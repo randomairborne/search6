@@ -1,4 +1,4 @@
-use crate::{util::WebhookState, AppState, Error, Players, User};
+use crate::{util::WebhookState, AppState, Error, Players, User, Player};
 use mee6::LevelInfo;
 use redis::AsyncCommands;
 use std::collections::HashMap;
@@ -9,92 +9,85 @@ use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
 pub async fn reload_loop(state: AppState) {
     let mut timer = tokio::time::interval(std::time::Duration::from_secs(3));
     timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
-    let mut page = 0usize;
-    let mut rank = 1i64;
-    'update: loop {
+    loop {
         timer.tick().await;
-        let resp = match state
-            .http
-            .get(format!(
-                "https://mee6.xyz/api/plugins/levels/leaderboard/{}",
-                state.guild_id
-            ))
-            .query(&[("limit", 1000), ("page", page)])
-            .send()
-            .await
-        {
-            Ok(v) => v,
-            Err(e) => {
-                error!("{e:?}");
-                continue 'update;
-            }
-        };
-        let players: Players = match resp.json().await {
-            Ok(v) => v,
-            Err(e) => {
-                error!("{e:?}");
-                continue 'update;
-            }
-        };
-        let mut serialized_users: Vec<(String, String)> = Vec::with_capacity(2000);
-        let mut user_keys: Vec<String> = Vec::with_capacity(1000);
-        let mut user_data: HashMap<u64, User> = HashMap::with_capacity(1000);
-        'insert: for player in players.players {
-            if player.xp < 100 {
-                rank = 1;
-                page = 0;
-                continue 'update;
-            }
-            let Ok(id) = player.id.parse::<u64>() else {
-                continue 'insert;
-            };
-            let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
-            let last_updated = Some(chrono::offset::Utc::now().timestamp_millis());
-            let user = User {
-                xp: player.xp,
-                id,
-                username: player.username,
-                discriminator: player.discriminator,
-                avatar: player.avatar,
-                message_count: player.message_count,
-                rank,
-                last_updated,
-            };
-            let Ok(data) = serde_json::to_string(&user) else { continue 'insert; };
-            serialized_users.push((slug_key, id.to_string()));
-            serialized_users.push((format!("user.id:{id}"), data));
-            user_keys.push(format!("user.id:{id}"));
-            user_data.insert(user.id, user);
-            rank += 1;
+        if let Err(e) = get_page(state.clone()).await {
+            error!("{e:?}");
         }
-        let Ok(mut redis) = state.redis.get().await else { continue 'update; };
-        if let Some(webhook) = state.webhook.clone() {
-            if let Ok(old_users) = redis.mget::<Vec<String>, Vec<String>>(user_keys).await {
-                'userchecker: for string_user in old_users {
-                    let Ok(old_user) = serde_json::from_str::<User>(&string_user) else { continue 'userchecker; };
-                    let Some(new_user) = user_data.remove(&old_user.id) else { continue 'userchecker; };
-                    let old_user_level = LevelInfo::new(old_user.xp).level();
-                    let new_user_level = LevelInfo::new(new_user.xp).level();
-                    if new_user_level >= 5 && old_user_level < 5 {
-                        let state = state.clone();
-                        let whstate = webhook.clone();
-                        tokio::spawn(async move {
-                            if let Err(e) =
-                                send_hook(&state, &whstate, new_user, new_user_level).await
-                            {
-                                error!("{e:?}");
-                            }
-                        });
-                    }
+    }
+}
+
+async fn get_page(state: AppState) -> Result<(), Error> {
+    let redis = state.redis.get().await?;
+    let page = redis.incr("sync:page", 1).await? - 1;
+    let rank = redis.get("sync:rank", 1).await? - 1;
+    let resp = state
+        .http
+        .get(format!(
+            "https://mee6.xyz/api/plugins/levels/leaderboard/{}",
+            state.guild_id
+        ))
+        .query(&[("limit", 1000), ("page", page)])
+        .send()
+        .await?;
+    let players: Players = resp.json().await?;
+    let mut serialized_users: Vec<(String, String)> = Vec::with_capacity(2000);
+    let mut user_keys: Vec<String> = Vec::with_capacity(1000);
+    let mut user_data: HashMap<u64, User> = HashMap::with_capacity(1000);
+    for player in players.players {
+        if let Err(e) = add_player(state.clone()).await {
+            error!("{e:?}");
+        }
+    }
+    if let Some(webhook) = state.webhook.clone() {
+        if let Ok(old_users) = redis.mget::<Vec<String>, Vec<String>>(user_keys).await {
+            'userchecker: for string_user in old_users {
+                let Ok(old_user) = serde_json::from_str::<User>(&string_user) else { continue 'userchecker; };
+                let Some(new_user) = user_data.remove(&old_user.id) else { continue 'userchecker; };
+                let old_user_level = LevelInfo::new(old_user.xp).level();
+                let new_user_level = LevelInfo::new(new_user.xp).level();
+                if new_user_level >= 5 && old_user_level < 5 {
+                    let state = state.clone();
+                    let whstate = webhook.clone();
+                    tokio::spawn(async move {
+                        if let Err(e) = send_hook(&state, &whstate, new_user, new_user_level).await
+                        {
+                            error!("{e:?}");
+                        }
+                    });
                 }
             }
         }
-        if let Err(redis_error) = redis.mset::<String, String, ()>(&serialized_users).await {
-            error!("{redis_error:?}");
-            continue 'update;
-        };
-        page += 1;
     }
+    redis.mset::<String, String, ()>(&serialized_users).await?;
+    Ok(())
+}
+
+async fn add_player(state: AppState, player: Player) -> Result<(), Error> {
+    let redis = state.redis.get().await?;
+    if player.xp < 100 {
+        redis.mset(&[("sync:page", 0), ("sync:rank", 0)]).await?;                                                                                                                                                  
+        return Ok(());
+    }
+    let id = player.id.parse::<u64>()?;
+    let slug_key = format!("user.slug:{}#{}", player.username, player.discriminator);
+    let last_updated = Some(chrono::offset::Utc::now().timestamp_millis());
+    let user = User {
+        xp: player.xp,
+        id,
+        username: player.username,
+        discriminator: player.discriminator,
+        avatar: player.avatar,
+        message_count: player.message_count,
+        rank,
+        last_updated,
+    };
+    let Ok(data) = serde_json::to_string(&user) else { continue 'insert; };
+    serialized_users.push((slug_key, id.to_string()));
+    serialized_users.push((format!("user.id:{id}"), data));
+    user_keys.push(format!("user.id:{id}"));
+    user_data.insert(user.id, user);
+    Ok(())
 }
 
 async fn send_hook(
