@@ -149,6 +149,8 @@ pub enum Error {
     TwilightBuilderImageSourceUrl(#[from] ImageSourceUrlError),
     #[error("Twilight-ImageSource:Attachment error: {0:?}")]
     TwilightBuilderImageSourceAttachment(#[from] ImageSourceAttachmentError),
+    #[error("ParseInt error: {0:?}")]
+    ParseInt(#[from] std::num::ParseIntError),
     #[error("ID not known- May not exist or may not be cached")]
     UnknownId,
     #[error("You must specify an ID")]
