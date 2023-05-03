@@ -75,8 +75,14 @@ async fn get_page(state: AppState) -> Result<(), Error> {
         }
         if let Ok(old_users) = redis.mget::<Vec<String>, Vec<String>>(user_keys).await {
             'userchecker: for string_user in old_users {
-                let Ok(old_user) = serde_json::from_str::<User>(&string_user) else { continue 'userchecker; };
-                let Some(new_user) = user_data.remove(&old_user.id) else { continue 'userchecker; };
+                let Ok(old_user) = serde_json::from_str::<User>(&string_user) else {
+                    warn!("user failed to deserialize");
+                    continue 'userchecker;
+                };
+                let Some(new_user) = user_data.remove(&old_user.id) else {
+                    warn!("Webhook user not in user data");
+                    continue 'userchecker;
+                };
                 let old_user_level = LevelInfo::new(old_user.xp).level();
                 let new_user_level = LevelInfo::new(new_user.xp).level();
                 if new_user_level >= 5 && old_user_level < 5 {
