@@ -13,12 +13,17 @@ pub async fn fetch_user(
     Query(query): Query<SubmitQuery>,
 ) -> Result<Html<String>, Error> {
     let mut ctx = tera::Context::new();
+    trace!("fetchuser initialized");
     ctx.insert("root_url", &*state.root_url);
     let Some(id) = query.id else {
+        trace!("fetchuser returning root");
         return Ok(Html(state.tera.render("index.html", &ctx)?))
     };
+    trace!("fetchuser getting user");
     let user = get_user(state.redis.get().await?, id, query.userexists).await?;
+    trace!("fetchuser got user");
     let level_info = mee6::LevelInfo::new(user.xp);
+    trace!("fetchuser got levels");
     ctx.insert("level", &level_info.level());
     ctx.insert("percentage", &level_info.percentage());
     ctx.insert("user", &user);
@@ -26,11 +31,13 @@ pub async fn fetch_user(
         "avatar",
         &get_avatar_url(user.id, &user.discriminator, &user.avatar, true),
     );
+    trace!("fetchuser added most data");
     if let Some(epoch_updated) = user.last_updated {
         if let Some(dur) = util::time_since_epoch(epoch_updated) {
             ctx.insert("user_last_update", &util::duration_fmt(dur));
         }
     }
+    trace!("fetchuser rendering");
     Ok(Html(state.tera.render("index.html", &ctx)?))
 }
 
