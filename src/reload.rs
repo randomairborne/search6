@@ -45,7 +45,7 @@ async fn get_page(state: AppState) -> Result<(), Error> {
     let mut serialized_users: Vec<(String, String)> = Vec::with_capacity(2000);
     let mut user_data: HashMap<u64, User> = HashMap::with_capacity(1000);
     for player in players.players {
-        match player_to_user(redis, player, rank).await {
+        match player_to_user(state.redis.get().await?, player, rank).await {
             Ok(user) => {
                 let Ok(user_string) = serde_json::to_string(&user) else {
                     error!("Failed to serialize user struct");
