@@ -69,5 +69,5 @@ kill_timeout = "5s"
     grace_period = "5s"
     restart_limit = 0
     method = "get"
-    path = "/saerch6.png"
+    path = "/search6.png"
     protocol = "http"
