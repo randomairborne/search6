@@ -52,7 +52,7 @@ async fn main() {
     let mut tera = tera::Tera::default();
     tera.add_raw_templates(vec![("index.html", include_str!("resources/index.html"))])
         .unwrap();
-    let pool_cfg = deadpool_redis::PoolConfig::new(10);
+    let pool_cfg = deadpool_redis::PoolConfig::new(25);
     let mut redis_cfg = Config::from_url(redis_url);
     redis_cfg.pool = Some(pool_cfg);
     let redis = redis_cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
