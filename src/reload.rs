@@ -45,7 +45,7 @@ async fn get_page(state: AppState) -> Result<(), Error> {
     let mut serialized_users: Vec<(String, String)> = Vec::with_capacity(2000);
     let mut user_data: HashMap<u64, User> = HashMap::with_capacity(1000);
     for player in players.players {
-        match player_to_user(state.clone(), player, rank).await {
+        match player_to_user(redis, player, rank).await {
             Ok(user) => {
                 let Ok(user_string) = serde_json::to_string(&user) else {
                     error!("Failed to serialize user struct");
@@ -102,8 +102,11 @@ async fn get_page(state: AppState) -> Result<(), Error> {
     Ok(())
 }
 
-async fn player_to_user(state: AppState, player: Player, rank: i64) -> Result<User, Error> {
-    let mut redis = state.redis.get().await?;
+async fn player_to_user(
+    mut redis: deadpool_redis::Connection,
+    player: Player,
+    rank: i64,
+) -> Result<User, Error> {
     if player.xp < 100 {
         redis.mset(&[(PAGE_KEY, 0), (RANK_KEY, 1)]).await?;
     }
