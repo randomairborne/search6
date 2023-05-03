@@ -23,28 +23,33 @@ pub async fn get_avatar_data(state: &AppState, user: &User) -> Result<String, Er
     Ok(data)
 }
 
-pub async fn get_user(
-    mut redis: deadpool_redis::Connection,
-    id: String,
-    user_exists: bool,
-) -> Result<User, Error> {
+pub async fn get_user(state: &AppState, id: String, user_exists: bool) -> Result<User, Error> {
+    trace!("get_user getting redis conn");
+    let mut redis = state.redis.get().await?;
+    trace!("get_user got redis conn");
+    trace!("get_user getting user id");
     let user_id = if id.chars().all(|c| c.is_ascii_digit()) {
         id
     } else {
         let slug_key = format!("user.slug:{id}");
+        trace!("get_user getting id from name");
         let id: Option<String> = redis.get(slug_key).await?;
+        trace!("get_user got id from name");
         if user_exists {
             id.ok_or(Error::NotLevelFive)?
         } else {
             id.ok_or(Error::UnknownId)?
         }
     };
+    trace!("get_user getting user");
     let data_string_optional: Option<String> = redis.get(format!("user.id:{user_id}")).await?;
+    trace!("get_user got user");
     let data_string = if user_exists {
         data_string_optional.ok_or(Error::NotLevelFive)?
     } else {
         data_string_optional.ok_or(Error::UnknownId)?
     };
+    trace!("get_user deserializing user from redis");
     Ok(serde_json::from_str(&data_string)?)
 }
 
@@ -102,7 +107,7 @@ pub async fn get_user_context(
     id: String,
     user_exists: bool,
 ) -> Result<xpd_rank_card::Context, Error> {
-    let user = get_user(state.redis.get().await?, id, user_exists).await?;
+    let user = get_user(state, id, user_exists).await?;
     user_context(state, user).await
 }
 

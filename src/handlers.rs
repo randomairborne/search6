@@ -20,7 +20,7 @@ pub async fn fetch_user(
         return Ok(Html(state.tera.render("index.html", &ctx)?))
     };
     trace!("fetchuser getting user");
-    let user = get_user(state.redis.get().await?, id, query.userexists).await?;
+    let user = get_user(&state, id, query.userexists).await?;
     trace!("fetchuser got user");
     let level_info = mee6::LevelInfo::new(user.xp);
     trace!("fetchuser got levels");
@@ -88,7 +88,7 @@ pub async fn fetch_json(
     let Some(id) = query.id else {
         return Err(Error::NoId)
     };
-    let user = get_user(state.redis.get().await?, id, query.userexists).await?;
+    let user = get_user(&state, id, query.userexists).await?;
     let level_info = mee6::LevelInfo::new(user.xp);
     Ok((
         [("Access-Control-Allow-Origin", "*")],
