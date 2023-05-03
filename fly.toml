@@ -44,3 +44,30 @@ kill_timeout = "5s"
     method = "get"
     path = "/?id=788222689126776832"
     protocol = "http"
+
+  [[services.http_checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "5s"
+    restart_limit = 0
+    method = "get"
+    path = "/card?id=788222689126776832"
+    protocol = "http"
+
+  [[services.http_checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "5s"
+    restart_limit = 0
+    method = "get"
+    path = "/"
+    protocol = "http"
+
+  [[services.http_checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "5s"
+    restart_limit = 0
+    method = "get"
+    path = "/saerch6.png"
+    protocol = "http"
