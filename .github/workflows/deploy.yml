@@ -99,10 +99,3 @@ jobs:
           push: true
           tags: ghcr.io/${{ env.REPO }}:latest
           platforms: linux/arm64,linux/amd64
-
-      - name: Set up flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@master
-
-      - run: flyctl deploy --detach
-        env:
-          FLY_ACCESS_TOKEN: ${{ secrets.FLY_ACCESS_TOKEN }}
