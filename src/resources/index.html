@@ -75,7 +75,7 @@
         {% else %}
         <div class="lookup-container">
             <form action="/" class="request-form">
-                <input pattern="^[ ]*([0-9]+|.*#[0-9]{4})[ ]*" name="id" id="identifier" class="textinput"
+                <input pattern="^[ ]*([0-9]+|.*#[0-9]{4}|a-z0-9\.\_)[ ]*" name="id" id="identifier" class="textinput"
                     title="Make sure you have a valid discord ID or friend code" placeholder="Name#0000 or snowflake"
                     size="26" />
                 <div class="textinput-spacer"></div>

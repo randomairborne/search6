@@ -8,6 +8,7 @@ use axum::{
     routing::get,
 };
 use deadpool_redis::{Config, Runtime};
+use serde::Deserialize;
 use std::sync::Arc;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 use twilight_model::id::{marker::GuildMarker, Id};
@@ -92,7 +93,8 @@ pub struct User {
     pub xp: u64,
     pub id: u64,
     pub username: String,
-    pub discriminator: String,
+    #[serde(deserialize_with = "user_discrim_deserialize")]
+    pub discriminator: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub avatar: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -102,12 +104,39 @@ pub struct User {
     pub last_updated: Option<i64>,
 }
 
+impl User {
+    #[must_use]
+    pub fn human_identifier(&self) -> String {
+        self.discriminator.as_ref().map_or_else(
+            || self.username.clone(),
+            |discriminator| format!("{}#{}", self.username, discriminator),
+        )
+    }
+}
+
+fn user_discrim_deserialize<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let de = Option::<String>::deserialize(deserializer)?;
+    if let Some(ref d) = de {
+        if d.chars().all(|v| v == '0') {
+            Ok(None)
+        } else {
+            Ok(de)
+        }
+    } else {
+        Ok(de)
+    }
+}
+
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct Player {
     pub xp: u64,
     pub id: String,
     pub username: String,
-    pub discriminator: String,
+    #[serde(deserialize_with = "user_discrim_deserialize")]
+    pub discriminator: Option<String>,
     pub message_count: Option<u64>,
     pub avatar: Option<String>,
 }

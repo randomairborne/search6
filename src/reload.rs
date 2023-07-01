@@ -56,7 +56,7 @@ async fn get_page(state: AppState) -> Result<(), Error> {
                     continue;
                 };
                 serialized_users.push((
-                    format!("user.name:{}#{}", user.username, user.discriminator),
+                    format!("user.name:{}", user.human_identifier()),
                     user.id.to_string(),
                 ));
                 serialized_users.push((format!("user.id:{}", user.id), user_string));
@@ -136,8 +136,11 @@ async fn send_hook(
             &*state.root_url
         ))?)
         .description(format!(
-            "User {}#{} (<@{}>) has reached level {}```{}```",
-            user.username, user.discriminator, user.id, level, request
+            "User {} (<@{}>) has reached level {}```{}```",
+            user.human_identifier(),
+            user.id,
+            level,
+            request
         ))
         .build();
     let card_svg = crate::util::user_context(state, user).await?;

@@ -14,7 +14,7 @@ use twilight_model::id::{
 use crate::{AppState, Error, User};
 
 pub async fn get_avatar_data(state: &AppState, user: &User) -> Result<String, Error> {
-    let url = get_avatar_url(user.id, &user.discriminator, &user.avatar, false);
+    let url = get_avatar_url(user.id, &user.avatar, false);
     let png = state.http.get(url).send().await?.bytes().await?;
     let data = format!(
         "data:image/png;base64,{}",
@@ -45,19 +45,19 @@ pub async fn get_user(state: &AppState, id: String, user_exists: bool) -> Result
     Ok(serde_json::from_str(&data_string)?)
 }
 
-pub fn get_avatar_url(id: u64, discrim: &str, hash: &Option<String>, allowgif: bool) -> String {
+pub fn get_avatar_url(id: u64, hash: &Option<String>, allowgif: bool) -> String {
     let Some(hash) = hash else {
         return format!(
             "https://cdn.discordapp.com/embed/avatars/{}.png?width=256&height=256",
             // display the 5.png easter egg if we can't parse the discrim
-            discrim.parse::<u16>().map_or(5, |v| v % 5)
+            (id >> 22) % 5
         );
     };
     if hash.is_empty() {
         return format!(
             "https://cdn.discordapp.com/embed/avatars/{}.png?width=256&height=256",
             // display the 5.png easter egg if we can't parse the discrim
-            discrim.parse::<u16>().map_or(5, |v| v % 5)
+            (id >> 22) % 5
         );
     }
     let ext = if allowgif {

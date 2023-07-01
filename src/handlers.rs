@@ -22,10 +22,7 @@ pub async fn fetch_user(
     ctx.insert("level", &level_info.level());
     ctx.insert("percentage", &level_info.percentage());
     ctx.insert("user", &user);
-    ctx.insert(
-        "avatar",
-        &get_avatar_url(user.id, &user.discriminator, &user.avatar, true),
-    );
+    ctx.insert("avatar", &get_avatar_url(user.id, &user.avatar, true));
     if let Some(epoch_updated) = user.last_updated {
         if let Some(dur) = util::time_since_epoch(epoch_updated) {
             ctx.insert("user_last_update", &util::duration_fmt(dur));
@@ -86,7 +83,7 @@ pub async fn fetch_json(
     Ok((
         [("Access-Control-Allow-Origin", "*")],
         Json(ApiResponse {
-            avatar_url: get_avatar_url(user.id, &user.discriminator, &user.avatar, true),
+            avatar_url: get_avatar_url(user.id, &user.avatar, true),
             level: level_info.level(),
             level_progress: level_info.percentage(),
             user,
