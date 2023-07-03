@@ -57,7 +57,7 @@ pub fn get_avatar_url(id: u64, hash: &Option<String>, allowgif: bool) -> String 
         return format!(
             "https://cdn.discordapp.com/embed/avatars/{}.png?width=256&height=256",
             // display the 5.png easter egg if we can't parse the discrim
-            (id >> 22) % 5
+            (id >> 22) % 6
         );
     }
     let ext = if allowgif {
