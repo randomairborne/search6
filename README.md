@@ -1,6 +1,6 @@
 # search6
 
-get levels in the minecraft discord here: [search6.xyz](https://search6.xyz)
+## Search6 has ended its service and is no longer supported. If you're a large server owner looking to migrate away from mee6, let me know at [valk@randomairborne.dev](mailto:valk@randomairborne.dev)
 
 If you want to run this software yourself, it's avaliable as a docker container.
 ```ghcr.io/randomairborne/search6```.
