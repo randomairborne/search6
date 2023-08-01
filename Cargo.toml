@@ -16,7 +16,7 @@ tracing = "0.1"
 twilight-http = "0.15"
 twilight-model = "0.15"
 twilight-validate = "0.15"
-xpd-rank-card = "0.2"
+xpd-rank-card = "0.5"
 
 [dependencies.chrono]
 version = "0.4"
